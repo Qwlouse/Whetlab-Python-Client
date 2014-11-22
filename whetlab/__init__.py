@@ -627,24 +627,24 @@ class Experiment:
     @catch_exception
     def get_all_results(self):
         """
-        Return a list of all jobs and a list of their corresponding outcomes.
+        Return a dict of all jobs and a dict of their corresponding outcomes. The keys of both are the unique job ids.
         Pending outcomes are returned as having ``None`` outcomes.
 
-        :return: Tuple of lists containing parameter values and corresponding outcomes indexed by unique result id.
-        :rtype: tuple of lists
+        :return: Tuple of dicts containing parameter values and corresponding outcomes indexed by unique result id.
+        :rtype: tuple of dicts
         """
 
         # Sync with the REST server
         self._sync_with_server()
 
-        jobs     = []
-        outcomes = []
+        jobs     = {}
+        outcomes = {}
         for k,v in self._ids_to_param_values.iteritems():
             if v:
-                jobs.append(Result(v))
-                jobs[-1]._result_id = k
-                jobs[-1]._experiment_id = self.experiment_id
-                outcomes.append(self._ids_to_outcome_values.get(k, None))            
+                jobs[k] = Result(v)
+                jobs[k]._result_id = k
+                jobs[k]._experiment_id = self.experiment_id
+                outcomes[k] = self._ids_to_outcome_values.get(k, None)
 
         return jobs, outcomes
 
@@ -713,9 +713,9 @@ class Experiment:
                     raise ValueError("Parameter '" +param+ "' should have value between "+str(self.parameters[param]['min']) +" and " + str(self.parameters[param]['max']))
             
             if self.parameters[param]['type'] == 'enum':
-                list_value = [value] if type(value) == str else value
+                list_value = [value] if isinstance(value, basestring) else value
                 if not np.all([ v in self.parameters[param]['options'] for v in list_value]):
-                    raise ValueError("Enum parameter '" +param+ "' should take values in " + str(self.parameters[param]['options']))
+                    raise ValueError("Enum parameter '" +param+ "' should take values in " + str(self.parameters[param]['options']) + " not " + str(value))
             
             if isinstance(value, np.ndarray) or isinstance(value, list):
                 value_type = {type(np.asscalar(np.array(v))) for v in value}
@@ -724,8 +724,10 @@ class Experiment:
                 value_type = value_type.pop()
             else:
                 value_type = type(value)
+            if isinstance(value, basestring): #basestr includes unicode
+                value_type = str
             if value_type != python_types[self.parameters[param]['type']]:
-                raise TypeError("Parameter '" +param+ "' should be of type " + self.parameters[param]['type'])
+                raise TypeError("Parameter '" +param+ "' should be of type " + python_types[self.parameters[param]['type']])
 
         # Check is all parameter values are specified
         for param in self.parameters.keys():

@@ -504,7 +504,7 @@ class TestExperiment:
         assert_equals(len(scientist._ids_to_outcome_values), 0 )
 
     def test_get_all_results(self):
-        """ Cancel removes a result. """
+        """ Get all the results in an experiment. """
 
         scientist = whetlab.Experiment(access_token=default_access_token,
                                        name=self.name,
@@ -525,8 +525,8 @@ class TestExperiment:
           j, o = scientist.get_all_results()
           assert_equals(len(j), len(o))
           assert_equals(len(j), i+1)
-          assert_equals(o[i], None)
-          assert_equals(count_in_list(jobs[i], j), 1)
+          assert_equals(o[scientist.get_id(jobs[i])], None)
+          assert_equals(j[scientist.get_id(jobs[i])], jobs[i])
 
         for i in xrange(5):
           result_id = scientist.get_id(jobs[i])
@@ -534,15 +534,16 @@ class TestExperiment:
           scientist.update_by_result_id(result_id, outcome)
           j, o = scientist.get_all_results()
           assert_equals(len(j), len(o))
-          assert_equals(count_in_list(jobs[i], j), 1)
-          assert(outcome in o)
+          assert_equals(j[scientist.get_id(jobs[i])], jobs[i])
+          # assert_equals(count_in_list(jobs[i], j), 1)
+          assert(outcome in o.values())
 
         for i in xrange(5):
           result_id = scientist.get_id(jobs[i])
           scientist.cancel_by_result_id(result_id)
           j, o = scientist.get_all_results()
           assert_equals(len(j), len(o))
-          assert_equals(count_in_list(jobs[i], j), 0)
+          assert_equals(count_in_list(jobs[i], j.values()), 0)
           assert_equals(len(j), 5-i-1)
 
     def test_update_by_result_id(self):
