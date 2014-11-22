@@ -18,6 +18,8 @@ setup(
 	install_requires=[
 		'requests >= 2.1.0'
 	],
+    download_url="https://github.com/whetlab/Whetlab-Python-Client/tarball/0.1",
+    keywords=['machine learning', 'optimizing', 'optimization', 'hyperparameters', 'deep learning', 'neural networks'],
 	packages=[
 		'whetlab',
                 'whetlab.server',
@@ -28,7 +30,7 @@ setup(
 	classifiers=[
 		'Development Status :: 5 - Production/Stable',
 		'Intended Audience :: Developers',
-		'License :: OSI Approved :: Harvard License',
+		'License :: Other/Proprietary License',
 		'Operating System :: OS Independent',
 		'Programming Language :: Python :: 2.6',
 		'Programming Language :: Python :: 2.7',
