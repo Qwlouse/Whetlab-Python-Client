@@ -18,6 +18,7 @@ setup(
 	install_requires=[
 		'requests >= 2.1.0'
 	],
+    keywords=['machine learning', 'optimizing', 'optimization', 'hyperparameters', 'deep learning', 'neural networks'],
 	packages=[
 		'whetlab',
                 'whetlab.server',
