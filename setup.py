@@ -1,3 +1,9 @@
+# To upload:
+# First make sure you've created a ~.pypirc file
+# a la http://peterdowns.com/posts/first-time-with-pypi.html
+# Then: 
+# python setup.py sdist upload -r pypi
+
 try:
     from setuptools import setup
 except ImportError:
@@ -7,7 +13,7 @@ dependencies = ['click','requests', 'tabulate', 'whetlab']
 
 setup(
 	name='whetlab',
-	version='0.1',
+	version='0.2',
 	description='Whetlab client for Python',
         long_description=open('README.md').read(),
 	author='Whetlab LLC',

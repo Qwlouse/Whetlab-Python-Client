@@ -219,7 +219,7 @@ def get_results(experiment, output_format, sortby, reverse):
     """List all results from a particular experiment
     """
     auth, headers = _get_auth()
-    r = requests.get(make_url("experiments/%d/?showresults=1"%experiment), auth=auth, headers=headers)
+    r = requests.get(make_url("experiments/%d/?page_size=99999&showresults=1"%experiment), auth=auth, headers=headers)
     _check_request(r)
 
     experiment_data = r.json()
@@ -285,7 +285,7 @@ def get_experiments(output_format,sortby,reverse):
     in the --full (or -f) flag to dump everything.
     """
     auth, headers = _get_auth()
-    r = requests.get(make_url("experiments/"), auth=auth, headers=headers)
+    r = requests.get(make_url("experiments/?page_size=99999"), auth=auth, headers=headers)
     _check_request(r)
 
     experiments_json = r.json()['results']
@@ -294,24 +294,6 @@ def get_experiments(output_format,sortby,reverse):
     click.echo(_format_output(experiments if output_format!="json" else experiments_json, 
         output_format))
     return
-
-# @main.command(name="set-host")
-# def set_host(host):
-#     """Set the Whetlab host (advanced use only!)
-#     """
-#     click.echo("New host set. Config file updated")
-
-# @main.command(name="get-host")
-# def get_host(host):
-#     """Get the Whetlab server address
-#     """
-#     click.echo("\nWhetlab service hosted at:\n%s"%_host_url)
-
-# @main.command(name="clone-experiment")
-# def clone_experiment():
-#     """Clone an experiment to a new name
-#     """
-#     click.echo("Doing clone_experiment...")
 
 @main.command(name="get-result")
 @click.argument("result", type=int)
@@ -377,7 +359,7 @@ def get_settings(experiment, output_format, sortby, reverse):
     """Get all settings from an experiment
     """
     auth, headers = _get_auth()
-    r = requests.get(make_url("settings/?experiment=%d"%experiment), auth=auth, headers=headers)
+    r = requests.get(make_url("settings/?page_size=99999&experiment=%d"%experiment), auth=auth, headers=headers)
     _check_request(r)
 
     settings_json = r.json()
