@@ -270,21 +270,29 @@ def delete_experiment(name='Default name', access_token=None):
     scientist._client.delete_experiment(scientist.experiment_id)
 
 @catch_exception
-def load_config():
+def find_config_file():
     filename = '.whetlab'
     search_path = ['.', os.path.expanduser('~')]
     for dir in search_path:
         full_path = os.path.join(dir, filename)
         if os.path.exists(full_path):
-            config = ConfigParser.RawConfigParser()
-            config.read(full_path)
-            config_dict = {}
-            if config.has_option('whetlab', 'access_token'):
-                config_dict['access_token'] = config.get('whetlab', 'access_token')
-            if config.has_option('whetlab', 'api_url'):
-                config_dict['api_url'] = config.get('whetlab', 'api_url')
-            return config_dict
-    return {}
+            return full_path
+    return None
+
+@catch_exception
+def load_config():
+    config_filepath = find_config_file()
+    if config_filepath:
+        config = ConfigParser.RawConfigParser()
+        config.read(config_filepath)
+        config_dict = {}
+        if config.has_option('whetlab', 'access_token'):
+            config_dict['access_token'] = config.get('whetlab', 'access_token')
+        if config.has_option('whetlab', 'api_url'):
+            config_dict['api_url'] = config.get('whetlab', 'api_url')
+        return config_dict
+    else:
+        return {}
 
 
 class Experiment:

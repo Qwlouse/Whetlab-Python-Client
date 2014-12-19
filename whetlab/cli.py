@@ -140,6 +140,7 @@ def update():
 def setup():
     """Log in and set up this machine to work with Whetlab
     """
+
     config = whetlab.load_config()
     if len(config.keys()) > 0: # if config setup
         yes = click.confirm("You've already set up Whetlab. Rerun setup?")
@@ -147,6 +148,11 @@ def setup():
     
     global _host_url
     _host_url = None
+    
+    config_filepath = whetlab.find_config_file()
+    if config_filepath:
+        os.remove(config_filepath)
+    
     access_token = _get_access_token(force_server=True)
     click.echo("Setting up Whetlab config file...")
     _write_config(access_token)
