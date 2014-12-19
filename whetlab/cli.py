@@ -16,8 +16,11 @@ def _force_callback(ctx, param, value):
 
 def _is_finite(val):
     import math
-    val = float(val)
-    return math.isnan(val) is False and math.isinf(val) is False
+    if val:
+        val = float(val)
+        return math.isnan(val) is False and math.isinf(val) is False
+    else:
+        return False
 
 def make_url(path):
     global _api_suffix
