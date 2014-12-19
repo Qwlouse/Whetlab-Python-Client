@@ -307,7 +307,7 @@ def get_result(result, output_format):
     r = requests.get(make_url("results/%d/"%result), auth=auth, headers=headers)
     _check_request(r)
     result_json = r.json()
-    setting_names = [v['name'] for v in result_json['variables']]
+    setting_names = sorted([v['name'] for v in result_json['variables']])
     result = format_result(result_json, setting_names)
     click.echo(_format_output([result] if output_format!="json" else result_json, 
         output_format))
@@ -559,7 +559,7 @@ def suggest(experiment, sync, output_format):
                 sleep(1)
                 continue
             else:
-                setting_names = [v['name'] for v in result_json['variables']]
+                setting_names = sorted([v['name'] for v in result_json['variables']])
                 result = format_result(result_json, setting_names)
                 click.echo(_format_output([result] if output_format!="json" else result_json, 
                     output_format))
