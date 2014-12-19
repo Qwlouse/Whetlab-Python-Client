@@ -17,7 +17,7 @@ from .response_handler import ResponseHandler
 # Main HttpClient which is used by Api classes
 class HttpClient():
 
-	def __init__(self, auth, options):
+	def __init__(self, auth, options={}):
 
 		if isinstance(auth, str):
 			auth = { 'access_token': auth }

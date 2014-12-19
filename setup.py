@@ -1,10 +1,9 @@
-import os
-import sys
-
 try:
     from setuptools import setup
 except ImportError:
     from distutils.core import setup
+
+dependencies = ['click','requests', 'tabulate', 'whetlab']
 
 setup(
 	name='whetlab',
@@ -15,9 +14,10 @@ setup(
 	author_email='info@whetlab.com',
 	url='http://www.whetlab.com/',
 	license='LICENSE.txt',
-	install_requires=[
-		'requests >= 2.1.0'
-	],
+	install_requires=dependencies,
+    include_package_data=True,
+    zip_safe=False,
+    platforms='any',
     download_url="https://github.com/whetlab/Whetlab-Python-Client/tarball/0.1",
     keywords=['machine learning', 'optimizing', 'optimization', 'hyperparameters', 'deep learning', 'neural networks'],
 	packages=[
@@ -27,6 +27,11 @@ setup(
                 'whetlab.server.error',
                 'whetlab.server.http_client'
 	],
+    entry_points={
+        'console_scripts': [
+            'whetlab = whetlab.cli:main',
+        ],
+    },
 	classifiers=[
 		'Development Status :: 5 - Production/Stable',
 		'Intended Audience :: Developers',
