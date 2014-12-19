@@ -551,11 +551,11 @@ def suggest(experiment, sync, output_format):
     _check_request(r)
     result_id = r.json()['id']
     if sync:
-        for i in range(10):
+        while 1:
             r = requests.get(make_url("results/%d/"%result_id), auth=auth, headers=headers)
             _check_request(r)
             result_json = r.json()
-            if result_json['suggestion_date'] is None: 
+            if result_json['suggestionDate'] is None: 
                 sleep(1)
                 continue
             else:
@@ -563,6 +563,7 @@ def suggest(experiment, sync, output_format):
                 result = format_result(result_json, setting_names)
                 click.echo(_format_output([result] if output_format!="json" else result_json, 
                     output_format))
+                break
 
     else:
         click.echo({"id":result_id})
