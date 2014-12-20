@@ -135,6 +135,12 @@ def _check_name_is_good(name):
     else:
         return True
 
+def _validate_name(name):
+    if not _check_name_is_good(name):
+        click.echo("Name %s is invalid." % name)
+        sys.exit()
+    return name
+
 def _validate_options(options):
     for option in options:
         if not _check_name_is_good(option):
@@ -206,13 +212,14 @@ def prompt_setting(setting=None):
 
     # If no setting is provided, we'll ask for a fresh setting, with no defaults
     if setting is None:
-        out_setting['name'] = None
+        out_setting['name'] = ""
         out_setting['isOutput'] = False
         out_setting['type'] = "float"
         out_setting['size'] = 1
         out_setting['min'] = None
         out_setting['max'] = None
         out_setting['options'] = None
+        setting = out_setting
 
     # However, if a setting is provided, we'll prompt for a modification of the passed setting
     else:
@@ -224,7 +231,18 @@ def prompt_setting(setting=None):
         out_setting['max'] = setting['max']
         out_setting['options'] = setting['options']
 
-    out_setting['name'] = prompt("Name", default=out_setting['name'], type=str)
+    if out_setting['name'] == "":
+        name_prefix = "(hit Enter to finish)"
+    else:
+        name_prefix = ""
+    out_setting['name'] = prompt("Name %s" % name_prefix, default=out_setting['name'], type=str)
+    # NOTE: HACK: 
+    # If we don't provide a name, we'll consider this the end of the road
+    # This is a nasty side-effect, but it allows us to do early-stopping
+    # while creating lists of settings for a new experiment
+    if out_setting['name'] == "":
+        return out_setting
+    out_setting['name'] = _validate_name(out_setting['name'])
 
     # No other options are needed if the setting is an output
     if out_setting['isOutput'] == True:
@@ -251,13 +269,13 @@ def prompt_setting(setting=None):
     elif out_setting['type'] in ("float", "integer"):
 
         # Get the default minimum (might not be able to get one if we've changed size or type earlier)
-        if (out_setting['size'] == setting['size']) & (_count(setting['min']) == out_setting['size']):
+        if (out_setting['size'] == setting['size']) and (_count(setting['min']) == out_setting['size']):
             out_setting['min'] = setting['min']
         else:
             out_setting['min'] = None
 
         # Get the default maximum (might not be able to get one if we've changed size or type earlier)
-        if (out_setting['size'] == setting['size']) & (_count(setting['max']) == out_setting['size']):
+        if (out_setting['size'] == setting['size']) and (_count(setting['max']) == out_setting['size']):
             out_setting['max'] = setting['max']
         else:
             out_setting['max'] = None
@@ -299,6 +317,16 @@ def prompt_result(result, settings):
 
     return out_result
 
+def prompt_experiment(experiment=None):
+    if experiment == None:
+        out_experiment = OrderedDict(name=None, description='')
+    else:
+        out_experiment = OrderedDict(name=experiment['name'], description=experiment['description'])
+
+    out_experiment['name'] = prompt("Name", default=out_experiment['name'], type=str)
+    out_experiment['description'] = prompt("Description", default=out_experiment['description'], type=str)
+
+    return out_experiment
 
 # TODO: TEST
 @main.command(name="update")
@@ -604,16 +632,6 @@ def delete_result(results):
     return 
 
 
-def prompt_experiment(experiment=None):
-    if experiment == None:
-        out_experiment = OrderedDict(name=None, description='')
-    else:
-        out_experiment = OrderedDict(name=experiment['name'], description=experiment['description'])
-
-    out_experiment['name'] = prompt("Name", default=out_experiment['name'], type=str)
-    out_experiment['description'] = prompt("Description", default=out_experiment['description'], type=str)
-
-    return out_experiment
 
 @main.command(name="update-experiment")
 @click.argument("experiment", type=int)
@@ -724,9 +742,11 @@ def update_setting(setting, data):
 
 @main.command(name="new-experiment")
 @click.argument("data", type=str, required=False, default="")
-def new_experiment(data):
+@click.option("--interactive/--no-interactive", "-i", help="Update a result interactively", default=True)
+def new_experiment(data, interactive):
     """Create the results, settings, name or description of an experiment
     """
+
 
     if data == "":
         if select.select([sys.stdin,],[],[],0.0)[0]:
@@ -735,13 +755,49 @@ def new_experiment(data):
                     break
                 data += line
         else:
-            click.echo("No data provided.")
-            return
-    json_data = json.loads(data)
+            # If we do not want to allow interactive updating, then exit
+            if not interactive:
+                click.echo("No data provided.")
+                return
 
     auth, headers = _get_auth()
+
+    # If data wasn't passed in as a JSON string, or piped,
+    # then we'll grab it interactively
+    if data == "":
+        # First get the experiment name and description
+        experiment_data = prompt_experiment(None)
+
+        # Then get the settings
+        click.echo("Settings:")
+        click.echo("Output Setting (only one output per experiment)")
+        output_setting = prompt_setting({"name": "", 
+                                        "isOutput":True,
+                                        "min": None, 
+                                        "max": None, 
+                                        "options": None, 
+                                        "size": 1,
+                                        "type": "float"})
+        settings = [output_setting]
+        click.echo("\n")
+        click.echo("Input Settings (up to 30):")
+        for i in range(30):
+            click.echo("==================================================")
+            setting = prompt_setting(None)
+            print setting
+            if setting['name'] == '':
+                break
+            settings.append(setting)
+        experiment_data['settings'] = settings
+
+        print settings
+
+        # Then dump it to JSON
+        data = json.dumps(experiment_data)
+
+    # Now, POST the data to the sky
     headers['content-type'] = 'application/json'
-    r = requests.post(make_url("experiments/"), data=json.dumps(json_data), auth=auth, headers=headers)
+    r = requests.post(make_url("experiments/"), data=data, auth=auth, headers=headers)
     _check_request(r)
 
 
