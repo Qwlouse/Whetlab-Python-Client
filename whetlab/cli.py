@@ -1,4 +1,7 @@
-import os, sys, select
+# NOTE:
+# Bug in click: if type="integer", click doesn't provide interpretable error
+
+import os, sys, select, re
 import ConfigParser
 import click, requests, whetlab
 from tabulate import tabulate
@@ -119,11 +122,155 @@ def main():
     """A command_line interface for interacting with Whetlab"""
     pass
 
-@main.command(name="test")
-def test():
-    """Update the whetlab CLI tool.
-    """
-    click.echo(make_url("results/"))
+def _validate_type(setting_type):
+    if setting_type not in ['float', 'integer', 'enum']:
+        click.echo("Invalid setting type %s. Must be float, integer or enum" % setting_type)
+        sys.exit()
+    return setting_type
+
+def _check_name_is_good(name):
+    validpat = re.compile('^[a-zA-Z_][a-zA-Z0-9_-]*\Z')
+    if validpat.match(name) is None:
+        return False
+    else:
+        return True
+
+def _validate_options(options):
+    for option in options:
+        if not _check_name_is_good(option):
+            error_msg = "Invalid option name %s. " % option
+            error_msg += "Must begin with a letter and not contain special characters besides underscore and dash"
+            click.echo(error_msg)
+            sys.exit()
+    return options
+
+def _validate_size(size):
+    if not ((size > 0) & (size < 30)):
+        click.echo("Invalid size %d. Must be greater than 0 and less than 30" % size)
+        sys.exit()
+    return size
+
+def _validate_bounds(minimum, maximum, size):
+    if size == 1:
+        if maximum <= minimum:
+            print (maximum, minimum)
+            click.echo("\nMinimum %s is greater than maximum %s" % (str(minimum), str(maximum)))
+            sys.exit()
+    else:
+        for dim,(mx,mn) in enumerate(zip(maximum, minimum)):
+            if mx <= mn: 
+                click.echo("\nMinimum %s is greater than maximum %s for dimension %d" % (str(mn), str(mx), dim+1))
+                sys.exit()
+    return minimum, maximum
+
+def _count(val):
+    """Count the number of entries in val, robust to scalars and iterables"""
+    if isinstance(val, (tuple, list, set)):
+        return len(val)
+    if isinstance(val, (str, unicode)):
+        return 1
+    if isinstance(val, (float, int, long)):
+        return 1
+
+def prompt(text, nargs=1, sep=",", type=str, **kwargs):
+    if nargs==1:
+        out = click.prompt(text, type=type, **kwargs)
+        if out is None:
+            sys.exit()
+        else:
+            return out
+    elif (nargs==-1) or (nargs > 1):
+        out = click.prompt(text, type=str, **kwargs)
+        if out is None:
+            sys.exit()
+        if sep != " ":
+            out = out.replace(" ", "")
+        out = map(type, out.split(sep))
+        if (nargs != -1) & (len(out) != nargs):
+            click.echo("Invalid number of inputs. Expected %d, found %d" % (nargs, len(out)))
+            sys.exit()
+        else:
+            return out
+    else:
+        raise ValueError("nargs must be -1 (infinite) or > 1")
+
+def prompt_setting(setting=None):
+
+    out_setting = OrderedDict(name=None,
+                              isOutput=False,
+                              type=None,
+                              size=None,
+                              min=None,
+                              max=None,
+                              options=None)
+
+    # If no setting is provided, we'll ask for a fresh setting, with no defaults
+    if setting is None:
+        out_setting['name'] = None
+        out_setting['isOutput'] = False
+        out_setting['type'] = "float"
+        out_setting['size'] = 1
+        out_setting['min'] = None
+        out_setting['max'] = None
+        out_setting['options'] = None
+
+    # However, if a setting is provided, we'll prompt for a modification of the passed setting
+    else:
+        print "=================================================="
+        out_setting['name'] = setting['name']
+        out_setting['isOutput'] = setting['isOutput']
+        out_setting['type'] = setting['type']
+        out_setting['size'] = setting['size']
+        out_setting['min'] = setting['min']
+        out_setting['max'] = setting['max']
+        out_setting['options'] = setting['options']
+        print out_setting['options']
+        print "=================================================="
+
+    out_setting['name'] = prompt("Name", default=out_setting['name'], type=str)
+
+    # No other options are needed if the setting is an output
+    if out_setting['isOutput'] == True:
+        return out_setting
+
+    # Type
+    out_setting['type'] = prompt("Type (float,integer or enum)", default=out_setting['type'], type=str)
+    out_setting['type'] = _validate_type(out_setting['type'])
+
+    # Size
+    out_setting['size'] = prompt("Size (dimension of parameter)", default=out_setting['size'], type=int)
+    out_setting['size'] = _validate_size(out_setting['size'])
+    
+    # If enum
+    suffix_text = "" if out_setting['size'] == 1 else "(comma separated, must match size of %d)" % out_setting['size']
+
+    if out_setting['type'] == "enum":
+        # Get the default options (might not be able to get one if we've changed size or type earlier)
+        if out_setting['options'] != None:
+            out_setting['options'] = ",".join(out_setting['options'])
+        out_setting['options'] = prompt("Options %s" % suffix_text, nargs=-1, default=out_setting['options'], type=str)
+        out_setting['options'] = _validate_options(out_setting['options'])
+
+    elif out_setting['type'] in ("float", "integer"):
+
+        # Get the default minimum (might not be able to get one if we've changed size or type earlier)
+        if (out_setting['size'] == setting['size']) & (_count(setting['min']) == out_setting['size']):
+            out_setting['min'] = setting['min']
+        else:
+            out_setting['min'] = None
+
+        # Get the default maximum (might not be able to get one if we've changed size or type earlier)
+        if (out_setting['size'] == setting['size']) & (_count(setting['max']) == out_setting['size']):
+            out_setting['max'] = setting['max']
+        else:
+            out_setting['max'] = None
+
+        expected_type = int if out_setting['type']=="integer" else float
+        out_setting['min'] = prompt("Min %s" % suffix_text, nargs=out_setting['size'], default=out_setting['min'], type=expected_type)
+        out_setting['max'] = prompt("Max %s" % suffix_text, nargs=out_setting['size'], default=out_setting['max'], type=expected_type)
+        out_setting['min'], out_setting['max'] = _validate_bounds(out_setting['min'], out_setting['max'], out_setting['size'])
+
+    return out_setting
 
 # TODO: TEST
 @main.command(name="update")
@@ -452,10 +599,41 @@ def update_experiment(experiment, data):
     _check_request(r)
 
 
+def prompt_result(result, settings):
+    if result == None:
+        default_variables = [OrderedDict(name=s['name'],
+                                         setting=s['id'],
+                                         value=None) for s in settings]
+        out_result = OrderedDict(userProposed=True, 
+                            experiment=settings[0]['experiment'],
+                            variables=default_variables)
+    else:
+        out_result = result
+        variables = []
+        for setting_name in [s['name'] for s in settings]:
+            for v in out_result['variables']:
+                if v['name'] == setting_name:
+                    variables.append(v)
+        out_result['variables'] = variables
+
+    for i,(variable,setting) in enumerate(zip(out_result['variables'], settings)):
+        _default_value = None if not variable.has_key("value") else variable['value']
+
+        expected_type = {"float":float,
+                         "integer":int,
+                         "enum":str}[setting['type']]
+        variable['value'] = prompt(variable['name'], nargs=setting['size'], default=_default_value, type=expected_type)
+    out_result['variables'] = variables
+
+    return out_result
+
+
+
 @main.command(name="update-result")
 @click.argument("result", type=int)
 @click.argument("data", type=str, required=False, default="")
-def update_result(result, data):
+@click.option("--interactive/--no-interactive", "-i", help="Update a result interactively", default=True)
+def update_result(result, data, interactive):
     """Update the results, settings, name or description of an result
     """
 
@@ -466,14 +644,37 @@ def update_result(result, data):
                     break
                 data += line
         else:
-            click.echo("No data provided.")
-            return
+            # If we do not want to allow interactive updating, then exit
+            if not interactive:
+                click.echo("No data provided.")
+                return
 
-    json_data = json.loads(data)
     auth, headers = _get_auth()
+
+    # If data wasn't passed in as a JSON string, or piped,
+    # then we'll grab it interactively
+    if data == "":
+
+        # First, get the result to update
+        r = requests.get(make_url("results/%d/"%result), auth=auth, headers=headers)
+        _check_request(r)
+        result_data = r.json()
+
+        # Get the settings (so that we might order the variables properly)
+        experiment = result_data['experiment']
+        r = requests.get(make_url("settings/?experiment=%d"%experiment), auth=auth, headers=headers)
+        _check_request(r)
+        settings = format_settings(r.json()['results'])
+
+        # Get the result data
+        result_data = prompt_result(result_data, settings)
+
+        # Turn it into JSON
+        data = json.dumps(result_data)
+
+    # Send it out over the wire
     headers['content-type'] = 'application/json'
-    r = requests.patch(make_url("results/%d/"%result), data=json.dumps(json_data), auth=auth, headers=headers)
-    print r
+    r = requests.patch(make_url("results/%d/"%result), data=data, auth=auth, headers=headers)
     _check_request(r)
 
 @main.command(name="update-setting")
