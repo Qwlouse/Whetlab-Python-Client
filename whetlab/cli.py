@@ -216,7 +216,6 @@ def prompt_setting(setting=None):
 
     # However, if a setting is provided, we'll prompt for a modification of the passed setting
     else:
-        print "=================================================="
         out_setting['name'] = setting['name']
         out_setting['isOutput'] = setting['isOutput']
         out_setting['type'] = setting['type']
@@ -224,8 +223,6 @@ def prompt_setting(setting=None):
         out_setting['min'] = setting['min']
         out_setting['max'] = setting['max']
         out_setting['options'] = setting['options']
-        print out_setting['options']
-        print "=================================================="
 
     out_setting['name'] = prompt("Name", default=out_setting['name'], type=str)
 
@@ -271,6 +268,37 @@ def prompt_setting(setting=None):
         out_setting['min'], out_setting['max'] = _validate_bounds(out_setting['min'], out_setting['max'], out_setting['size'])
 
     return out_setting
+
+def prompt_result(result, settings):
+    if result == None:
+        default_variables = [OrderedDict(name=s['name'],
+                                         setting=s['id'],
+                                         value=None) for s in settings]
+        out_result = OrderedDict(userProposed=True, 
+                            experiment=settings[0]['experiment'],
+                            variables=default_variables)
+    else:
+        out_result = result
+        variables = []
+        for setting_name in [s['name'] for s in settings]:
+            for v in out_result['variables']:
+                if v['name'] == setting_name:
+                    variables.append(v)
+        out_result['variables'] = variables
+
+    variables = []
+    for i,(variable,setting) in enumerate(zip(out_result['variables'], settings)):
+        _default_value = None if not variable.has_key("value") else variable['value']
+
+        expected_type = {"float":float,
+                         "integer":int,
+                         "enum":str}[setting['type']]
+        variable['value'] = prompt(variable['name'], nargs=setting['size'], default=_default_value, type=expected_type)
+        variables.append(variable)
+    out_result['variables'] = variables
+
+    return out_result
+
 
 # TODO: TEST
 @main.command(name="update")
@@ -575,12 +603,26 @@ def delete_result(results):
         _check_request(r)
     return 
 
+
+def prompt_experiment(experiment=None):
+    if experiment == None:
+        out_experiment = OrderedDict(name=None, description='')
+    else:
+        out_experiment = OrderedDict(name=experiment['name'], description=experiment['description'])
+
+    out_experiment['name'] = prompt("Name", default=out_experiment['name'], type=str)
+    out_experiment['description'] = prompt("Description", default=out_experiment['description'], type=str)
+
+    return out_experiment
+
 @main.command(name="update-experiment")
 @click.argument("experiment", type=int)
 @click.argument("data", type=str, required=False, default="")
-def update_experiment(experiment, data):
+@click.option("--interactive/--no-interactive", "-i", help="Update a result interactively", default=True)
+def update_experiment(experiment, data, interactive):
     """Update the results, settings, name or description of an experiment
     """
+
 
     if data == "":
         if select.select([sys.stdin,],[],[],0.0)[0]:
@@ -589,47 +631,25 @@ def update_experiment(experiment, data):
                     break
                 data += line
         else:
-            click.echo("No data provided.")
-            return
+            # If we do not want to allow interactive updating, then exit
+            if not interactive:
+                click.echo("No data provided.")
+                return
 
-    json_data = json.loads(data)
     auth, headers = _get_auth()
+
+    # If data wasn't passed in as a JSON string, or piped,
+    # then we'll grab it interactively
+    if data == "":
+        r = requests.get(make_url("experiments/%d/"%experiment), auth=auth, headers=headers)
+        _check_request(r)
+        experiment_data = r.json()
+        experiment_data = prompt_experiment(experiment_data)
+        data = json.dumps(experiment_data)        
+
     headers['content-type'] = 'application/json'
-    r = requests.patch(make_url("experiments/%d/"%experiment), data=json.dumps(json_data), auth=auth, headers=headers)
+    r = requests.patch(make_url("experiments/%d/"%experiment), data=data, auth=auth, headers=headers)
     _check_request(r)
-
-
-def prompt_result(result, settings):
-    if result == None:
-        default_variables = [OrderedDict(name=s['name'],
-                                         setting=s['id'],
-                                         value=None) for s in settings]
-        out_result = OrderedDict(userProposed=True, 
-                            experiment=settings[0]['experiment'],
-                            variables=default_variables)
-    else:
-        out_result = result
-        variables = []
-        for setting_name in [s['name'] for s in settings]:
-            for v in out_result['variables']:
-                if v['name'] == setting_name:
-                    variables.append(v)
-        out_result['variables'] = variables
-
-    variables = []
-    for i,(variable,setting) in enumerate(zip(out_result['variables'], settings)):
-        _default_value = None if not variable.has_key("value") else variable['value']
-
-        expected_type = {"float":float,
-                         "integer":int,
-                         "enum":str}[setting['type']]
-        variable['value'] = prompt(variable['name'], nargs=setting['size'], default=_default_value, type=expected_type)
-        variables.append(variable)
-    out_result['variables'] = variables
-
-    return out_result
-
-
 
 @main.command(name="update-result")
 @click.argument("result", type=int)
