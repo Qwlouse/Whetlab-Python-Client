@@ -136,10 +136,14 @@ def _check_name_is_good(name):
         return True
 
 def _validate_name(name):
-    if not _check_name_is_good(name):
-        click.echo("Name %s is invalid." % name)
-        sys.exit()
     return name
+
+    # TODO:
+    # Stricter name validation on the server
+    # if not _check_name_is_good(name):
+    #     click.echo("Name %s is invalid." % name)
+    #     sys.exit()
+    # return name
 
 def _validate_options(options):
     for option in options:
