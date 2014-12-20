@@ -790,8 +790,6 @@ def new_experiment(data, interactive):
             settings.append(setting)
         experiment_data['settings'] = settings
 
-        print settings
-
         # Then dump it to JSON
         data = json.dumps(experiment_data)
 
