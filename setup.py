@@ -13,7 +13,7 @@ dependencies = ['click','requests', 'tabulate', 'whetlab']
 
 setup(
 	name='whetlab',
-	version='0.2.1.6',
+	version='0.2.1.7',
 	description='Whetlab client for Python',
         long_description=open('README.md').read(),
 	author='Whetlab LLC',
