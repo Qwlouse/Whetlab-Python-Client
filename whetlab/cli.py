@@ -159,7 +159,6 @@ def _validate_size(size):
 def _validate_bounds(minimum, maximum, size):
     if size == 1:
         if maximum <= minimum:
-            print (maximum, minimum)
             click.echo("\nMinimum %s is greater than maximum %s" % (str(minimum), str(maximum)))
             sys.exit()
     else:
@@ -784,7 +783,6 @@ def new_experiment(data, interactive):
         for i in range(30):
             click.echo("==================================================")
             setting = prompt_setting(None)
-            print setting
             if setting['name'] == '':
                 break
             settings.append(setting)
@@ -876,7 +874,7 @@ def clone_experiment(experiment, data, interactive):
                 val = results_json[iresult]['variables'][ivar]['value']
                 # Update its setting for the new setting, and include its value
                 results_json[iresult]['variables'][ivar] = dict(setting=new_setting['id'], value=val, name=new_setting['name'])
-                
+
     # TODO:
     # Concurrency with multiprocessing.
     for result in results_json:
