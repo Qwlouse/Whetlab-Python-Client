@@ -800,90 +800,116 @@ def new_experiment(data, interactive):
     r = requests.post(make_url("experiments/"), data=data, auth=auth, headers=headers)
     _check_request(r)
 
-@main.command(name="clone-experiment")
-@click.argument("experiment", type=int)
-@click.argument("data", type=str, required=False, default="")
-@click.option("--interactive/--no-interactive", "-i", help="Update a result interactively", default=True)
-def clone_experiment(experiment, data, interactive):
-    """Clone an experiment (settings and results)
-    """
+# @main.command(name="clone-experiment")
+# @click.argument("experiment", type=int)
+# @click.argument("data", type=str, required=False, default="")
+# @click.option("--interactive/--no-interactive", "-i", help="Update a result interactively", default=True)
+# def clone_experiment(experiment, data, interactive):
+#     """Clone an experiment (settings and results)
+#     """
 
-    # First, get the experiment we'd like to clone
-    auth, headers = _get_auth()
-    r = requests.get(make_url("experiments/%d/?showresults=1"%experiment), auth=auth, headers=headers)
-    _check_request(r)
-    experiment_data = r.json()
-    if not experiment_data.has_key("results"):
-        click.echo("No results for experiment ID %d" % experiment)
-        return 
-    settings_json = experiment_data['settings']
-    results_json = experiment_data['results']
-    old_settings = format_settings(settings_json)
-    results = format_results(results_json, [s['name'] for s in old_settings])
+#     # First, get the experiment we'd like to clone
+#     auth, headers = _get_auth()
+#     r = requests.get(make_url("experiments/%d/?showresults=1"%experiment), auth=auth, headers=headers)
+#     _check_request(r)
+#     experiment_data = r.json()
+#     if not experiment_data.has_key("results"):
+#         click.echo("No results for experiment ID %d" % experiment)
+#         return 
+#     settings_json = experiment_data['settings']
+#     results_json = experiment_data['results']
+#     old_settings = format_settings(settings_json)
+#     results = format_results(results_json, [s['name'] for s in old_settings])
 
-    # If we've piped in new experiment data, then let's use that
-    if data == "":
-        if select.select([sys.stdin,],[],[],0.0)[0]:
-            for line in sys.stdin:
-                if not line: 
-                    break
-                data += line
-            experiment_data.update(json.loads(data))
-        else:
-            # If we do not want to allow interactive updating, then exit
-            if not interactive:
-                click.echo("No data provided.")
-                return
-
-
-    # If data wasn't passed in as a JSON string, or piped,
-    # then we'll grab it interactively
-    if interactive and data == "":
-        # First get the experiment name and description
-        experiment_data = prompt_experiment(experiment_data)
-
-        # Then get the settings
-        click.echo("Settings:")
-        click.echo("Output Setting (only one output per experiment)")
-        new_settings = []
-        for setting in old_settings:
-            out_setting = prompt_setting(setting)
-            new_settings.append(out_setting)
-        experiment_data['settings'] = new_settings
-
-    # Now, POST the data to the sky
-    headers['content-type'] = 'application/json'
-    r = requests.post(make_url("experiments/"), data=json.dumps(experiment_data), auth=auth, headers=headers)
-    _check_request(r)
-    experiment_id = r.json()['id']
-
-    # Match the new settings to the result variables
-    r = requests.get(make_url("settings/?page_size=99999&experiment=%d"%experiment_id), auth=auth, headers=headers)
-    _check_request(r)
-    new_settings = format_settings(r.json()['results']) # this is to get the IDs only, really.
+#     # If we've piped in new experiment data, then let's use that
+#     if data == "":
+#         if select.select([sys.stdin,],[],[],0.0)[0]:
+#             for line in sys.stdin:
+#                 if not line: 
+#                     break
+#                 data += line
+#             experiment_data.update(json.loads(data))
+#         else:
+#             # If we do not want to allow interactive updating, then exit
+#             if not interactive:
+#                 click.echo("No data provided.")
+#                 return
 
 
-    # Make a map between old and new settings
-    # For each result
-    for iresult in range(len(results_json)):
-        # For each old setting
-        results_json[iresult] = dict(experiment=experiment_id,
-                                     userProposed=results_json[iresult]['userProposed'],
-                                     variables=results_json[iresult]['variables'])
-        for old_setting,new_setting in zip(old_settings,new_settings):
-            # Find the variable for the old setting
-            for ivar in range(len(results_json[iresult]['variables'])):
-                if results_json[iresult]['variables'][ivar]['name'] != old_setting['name']:
-                    continue
-                val = results_json[iresult]['variables'][ivar]['value']
-                # Update its setting for the new setting, and include its value
-                results_json[iresult]['variables'][ivar] = dict(setting=new_setting['id'], value=val, name=new_setting['name'])
+#     # If data wasn't passed in as a JSON string, or piped,
+#     # then we'll grab it interactively
+#     if interactive and data == "":
+#         # First get the experiment name and description
+#         experiment_data['name'] = "Copy of " + experiment_data['name']
+#         experiment_data = prompt_experiment(experiment_data)
 
-    # TODO:
-    # Concurrency with multiprocessing.
-    for result in results_json:
-        r = requests.post(make_url("results/"), data=json.dumps(result), auth=auth, headers=headers)
-        _check_request(r)
+#         # Then get the settings
+#         click.echo("Settings:")
+#         click.echo("Output Setting (only one output per experiment)")
+#         new_settings = []
+#         for setting in old_settings:
+#             out_setting = prompt_setting(setting)
+#             new_settings.append(out_setting)
+#         experiment_data['settings'] = new_settings
+
+#     # Now, POST the data to the sky
+#     headers['content-type'] = 'application/json'
+#     r = requests.post(make_url("experiments/"), data=json.dumps(experiment_data), auth=auth, headers=headers)
+#     _check_request(r)
+#     experiment_id = r.json()['id']
+
+#     # Match the new settings to the result variables
+#     r = requests.get(make_url("settings/?page_size=99999&experiment=%d"%experiment_id), auth=auth, headers=headers)
+#     _check_request(r)
+#     new_settings = format_settings(r.json()['results']) # this is to get the IDs only, really.
+
+
+#     # Make a map between old and new settings
+#     # For each result
+#     click.echo("\nCloning experiment (this could take a few minutes for large experiments...)\n")
+#     for iresult in range(len(results_json)):
+#         # For each old setting
+#         results_json[iresult] = dict(experiment=experiment_id,
+#                                      userProposed=results_json[iresult]['userProposed'],
+#                                      variables=results_json[iresult]['variables'])
+#         for old_setting,new_setting in zip(old_settings,new_settings):
+#             # Find the variable for the old setting
+#             for ivar in range(len(results_json[iresult]['variables'])):
+#                 result = results_json[iresult]
+#                 if result['variables'][ivar]['name'] != old_setting['name']:
+#                     continue
+#                 val = result['variables'][ivar]['value']
+#                 # Update its setting for the new setting, and include its value
+#                 results_json[iresult]['variables'][ivar] = dict(setting=new_setting['id'], value=val, name=new_setting['name'])
+
+#     # Remove results whose values are out of bounds
+#     valid_results_json = []
+#     for iresult in range(len(results_json)):
+#         # For each old setting
+#         keep = True
+#         for new_setting in new_settings:
+#             # Find the variable for the old setting
+#             for ivar in range(len(results_json[iresult]['variables'])):
+#                 result = results_json[iresult]
+#                 if result['variables'][ivar]['name'] != new_setting['name']:
+#                     continue
+#                 val = result['variables'][ivar]['value']
+#                 # Update its setting for the new setting, and include its value
+#                 if new_setting['type'] != 'enum':
+#                     if not ((val >= new_setting['min']) & (val <= new_setting['max'])):
+#                         keep = False
+#                 elif new_setting['type'] == 'enum':
+#                     if val not in new_setting['options']:
+#                         keep = False
+#         if keep:
+#             valid_results_json.append(results_json[iresult])
+
+
+#     # TODO:
+#     # Concurrency with multiprocessing.
+#     for result in valid_results_json:
+#         r = requests.post(make_url("results/"), data=json.dumps(result), auth=auth, headers=headers)
+#         _check_request(r)
 
 @main.command(name="new-result")
 @click.argument("experiment", type=int)
