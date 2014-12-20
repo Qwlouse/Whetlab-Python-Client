@@ -616,6 +616,7 @@ def prompt_result(result, settings):
                     variables.append(v)
         out_result['variables'] = variables
 
+    variables = []
     for i,(variable,setting) in enumerate(zip(out_result['variables'], settings)):
         _default_value = None if not variable.has_key("value") else variable['value']
 
@@ -623,6 +624,7 @@ def prompt_result(result, settings):
                          "integer":int,
                          "enum":str}[setting['type']]
         variable['value'] = prompt(variable['name'], nargs=setting['size'], default=_default_value, type=expected_type)
+        variables.append(variable)
     out_result['variables'] = variables
 
     return out_result
@@ -724,10 +726,13 @@ def new_experiment(data):
 
 
 @main.command(name="new-result")
+@click.argument("experiment", type=int)
 @click.argument("data", type=str, required=False, default="")
-def new_result(data):
+@click.option("--interactive/--no-interactive", "-i", help="Update a result interactively", default=True)
+def new_result(experiment, data, interactive):
     """Create the results, settings, name or description of an result
     """
+
 
     if data == "":
         if select.select([sys.stdin,],[],[],0.0)[0]:
@@ -736,13 +741,29 @@ def new_result(data):
                     break
                 data += line
         else:
-            click.echo("No data provided.")
-            return
-    json_data = json.loads(data)
+            # If we do not want to allow interactive updating, then exit
+            if not interactive:
+                click.echo("No data provided.")
+                return
 
     auth, headers = _get_auth()
+
+    # If data wasn't passed in as a JSON string, or piped,
+    # then we'll grab it interactively
+    if data == "":
+        r = requests.get(make_url("settings/?experiment=%d"%experiment), auth=auth, headers=headers)
+        _check_request(r)
+        settings = format_settings(r.json()['results'])
+
+        # Get the result data
+        result_data = prompt_result(None, settings)
+
+        # Turn it into JSON
+        data = json.dumps(result_data)
+
+
     headers['content-type'] = 'application/json'
-    r = requests.post(make_url("results/"), data=json.dumps(json_data), auth=auth, headers=headers)
+    r = requests.post(make_url("results/"), data=data, auth=auth, headers=headers)
     _check_request(r)
 
 @main.command(name="suggest")
