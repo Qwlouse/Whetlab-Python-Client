@@ -957,6 +957,7 @@ def new_result(experiment, data, interactive):
 @click.argument("data", type=str, required=False, default="")
 @click.option("--interactive/--no-interactive", "-i", help="Update a result interactively", default=False)
 def clone(experiment, data, interactive):
+    """Clone an experiment"""
 
     if data == "":
         if select.select([sys.stdin,],[],[],0.0)[0]:
@@ -972,7 +973,7 @@ def clone(experiment, data, interactive):
 
     auth, headers = _get_auth()
 
-    r = requests.post(make_url("experiments/%d/clone/"%experiment), auth=auth, headers=headers)
+    r = requests.post(make_url("experiments/%d/clone/"%experiment), data=data, auth=auth, headers=headers)
     _check_request(r)
 
 
