@@ -952,6 +952,30 @@ def new_result(experiment, data, interactive):
     r = requests.post(make_url("results/"), data=data, auth=auth, headers=headers)
     _check_request(r)
 
+@main.command(name="clone")
+@click.argument("experiment", type=int)
+@click.argument("data", type=str, required=False, default="")
+@click.option("--interactive/--no-interactive", "-i", help="Update a result interactively", default=False)
+def clone(experiment, data, interactive):
+
+    if data == "":
+        if select.select([sys.stdin,],[],[],0.0)[0]:
+            for line in sys.stdin:
+                if not line: 
+                    break
+                data += line
+        else:
+            # If we do not want to allow interactive updating, then exit
+            if not interactive:
+                click.echo("No data provided.")
+                return
+
+    auth, headers = _get_auth()
+
+    r = requests.post(make_url("experiments/%d/clone/"%experiment), auth=auth, headers=headers)
+    _check_request(r)
+
+
 @main.command(name="suggest")
 @click.argument("experiment", type=int)
 @click.option("--sync", 'sync', flag_value=True, help='Format output as JSON')
