@@ -952,11 +952,11 @@ def new_result(experiment, data, interactive):
     r = requests.post(make_url("results/"), data=data, auth=auth, headers=headers)
     _check_request(r)
 
-@main.command(name="clone")
+@main.command(name="clone-experiment")
 @click.argument("experiment", type=int)
 @click.argument("data", type=str, required=False, default="")
 @click.option("--interactive/--no-interactive", "-i", help="Update a result interactively", default=False)
-def clone(experiment, data, interactive):
+def clone_experiment(experiment, data, interactive):
     """Clone an experiment"""
 
     if data == "":
