@@ -972,7 +972,7 @@ def clone_experiment(experiment, data, interactive):
                 return
 
     auth, headers = _get_auth()
-
+    headers['content-type'] = 'application/json'
     r = requests.post(make_url("experiments/%d/clone/"%experiment), data=data, auth=auth, headers=headers)
     _check_request(r)
 
