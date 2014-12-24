@@ -46,7 +46,7 @@ def _write_config(access_token):
     config = ConfigParser.RawConfigParser()
     config.add_section("whetlab")
     config.set("whetlab", "access_token", access_token)
-    config.set("whetlab", "host", _host_url)
+    config.set("whetlab", "api_url", _host_url)
     with open(out_path, "w") as f:
         config.write(f)
 
