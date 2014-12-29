@@ -605,7 +605,6 @@ def get_setting(setting, output_format):
     setting = format_settings([setting_json])
     click.echo(_format_output(setting if output_format!="json" else setting_json, 
             output_format))
-
     return
 
 @main.command(name="delete-experiment")
@@ -723,7 +722,8 @@ def update_result(result, data, interactive):
 @main.command(name="update-setting")
 @click.argument("setting", type=int)
 @click.argument("data", type=str, required=False, default="")
-def update_setting(setting, data):
+@click.option('--force', '-f', is_flag=True)
+def update_setting(setting, data, force):
     """Update the settings, settings, name or description of an setting
     """
 
@@ -738,6 +738,16 @@ def update_setting(setting, data):
             return
 
     json_data = json.loads(data)
+
+    if not force:
+        if "min" in json_data or "max" in json_data or "options" in json_data:
+            click.echo("\nSetting a new min, max or options on a setting ")
+            click.echo("will cause results that fall out of bounds to be deleted.")
+            click.echo("If you want, you can first clone a backup of the experiment with e.g.\n")
+            click.echo("> whetlab clone-experiment EXPERIMENT-ID\n")
+            if not click.confirm("Do you wish to continue?"):
+                return
+
     auth, headers = _get_auth()
     headers['content-type'] = 'application/json'
     r = requests.patch(make_url("settings/%d/"%setting), data=json.dumps(json_data), auth=auth, headers=headers)
@@ -967,9 +977,7 @@ def clone_experiment(experiment, data, interactive):
                 data += line
         else:
             # If we do not want to allow interactive updating, then exit
-            if not interactive:
-                click.echo("No data provided.")
-                return
+            data = '{}'
 
     auth, headers = _get_auth()
     headers['content-type'] = 'application/json'
