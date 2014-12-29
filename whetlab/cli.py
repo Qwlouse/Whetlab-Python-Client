@@ -452,8 +452,11 @@ def get_results(experiment, output_format, sortby, reverse):
         return
 
     results_json, results = do_sort(results_json, results, sortby, reverse)
-    click.echo(_format_output(results if output_format!="json" else results_json, 
-                                output_format))
+    if len(results):
+        click.echo(_format_output(results if output_format!="json" else results_json, 
+                                    output_format))
+    else:
+        click.echo("No results yet")
 
 @main.command(name="best-result")
 @click.argument("experiment", type=int)
@@ -552,11 +555,18 @@ def get_experiment(experiment, output_format):
 
     if output_format != "json":
         click.echo("\nSettings:\n" if output_format=="table" else "\n")
-        click.echo(_format_output(settings if output_format!="json" else settings_json, 
-            output_format))
-        click.echo("\nResults:\n" if output_format=="table" else "\n")
-        click.echo(_format_output(results if output_format!="json" else results_json, 
+        if len(settings):
+            click.echo(_format_output(settings if output_format!="json" else settings_json, 
                 output_format))
+        else:
+            click.echo("No settings yet")
+
+        click.echo("\nResults:\n" if output_format=="table" else "\n")
+        if len(results):
+            click.echo(_format_output(results if output_format!="json" else results_json, 
+                    output_format))
+        else:
+            click.echo("No results yet")
     else:
         click.echo(_format_output(experiment_data, output_format))
 
@@ -584,8 +594,11 @@ def get_settings(experiment, output_format, sortby, reverse):
     settings_json = settings_json['results']
     settings = format_settings(settings_json)
     settings_json, settings = do_sort(settings_json, settings, sortby, reverse)
-    click.echo(_format_output(settings if output_format!="json" else settings_json, 
-                output_format))
+    if len(settings):
+        click.echo(_format_output(settings if output_format!="json" else settings_json, 
+                    output_format))
+    else:
+        click.echo("No settings yet")
     return
 
 @main.command(name="get-setting")
@@ -987,8 +1000,8 @@ def clone_experiment(experiment, data, interactive):
 
 @main.command(name="suggest")
 @click.argument("experiment", type=int)
-@click.option("--sync", 'sync', flag_value=True, help='Format output as JSON')
-@click.option("--async", 'sync', flag_value=False, help='Format output as CSV', default=False)
+@click.option("--sync", 'sync', flag_value=True, help='Return only when suggestion has been completed')
+@click.option("--async", 'sync', flag_value=False, help='Return immediately, even if suggestion has not been completed', default=False)
 @click.option("--json", 'output_format', flag_value='json', help='Format output as JSON')
 @click.option("--csv", 'output_format', flag_value='csv', help='Format output as CSV')
 @click.option("--table", 'output_format', flag_value='table', help="Format output in a table", default=True)
