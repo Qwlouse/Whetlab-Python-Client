@@ -284,9 +284,9 @@ def prompt_setting(setting=None):
             out_setting['max'] = None
 
         expected_type = int if out_setting['type']=="integer" else float
-        out_setting['min'] = prompt("Min %s" % suffix_text, nargs=out_setting['size'], default=out_setting['min'], type=expected_type)
-        out_setting['max'] = prompt("Max %s" % suffix_text, nargs=out_setting['size'], default=out_setting['max'], type=expected_type)
-        out_setting['min'], out_setting['max'] = _validate_bounds(out_setting['min'], out_setting['max'], out_setting['size'])
+        out_setting['min'] = prompt("Min %s" % suffix_text, nargs=1, default=out_setting['min'], type=expected_type)
+        out_setting['max'] = prompt("Max %s" % suffix_text, nargs=1, default=out_setting['max'], type=expected_type)
+        out_setting['min'], out_setting['max'] = _validate_bounds(out_setting['min'], out_setting['max'], 1)
 
     return out_setting
 
