@@ -382,9 +382,20 @@ def request_new_token():
 # Formatting functions
 format_experiment = lambda exp: OrderedDict([("ID",exp['id']), ("Name",exp['name'])])
 format_setting = lambda setting, setting_keys: OrderedDict([(key,setting[key]) for key in setting_keys])
-format_result = lambda result, setting_names: OrderedDict([("ID",result['id'])]+
-                    [(name,[v['value'] for v in result['variables'] if v['name']==name][0]) 
-                     for name in setting_names])
+def format_result(result, setting_names):
+    out = [("ID",result['id'])]
+    if len(result['variables']):
+        variable_names,variable_values = zip(*[(v['name'],v['value']) 
+                                                for v in result['variables']])
+    else:
+        variable_names,variable_values = [],[]
+    for setting_name in setting_names:
+        if setting_name in variable_names:
+            idx = variable_names.index(setting_name)
+            out += [(variable_names[idx],variable_values[idx])]
+        else:
+            out += [(setting_name,None)]
+    return OrderedDict(out)
 format_experiments = lambda experiments_json: [format_experiment(exp) for exp in experiments_json]
 format_results = lambda results_json,setting_names: [format_result(result,setting_names) for result in results_json]
 def format_settings(settings_json):
