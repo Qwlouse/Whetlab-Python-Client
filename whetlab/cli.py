@@ -989,8 +989,7 @@ def new_result(experiment, data, interactive):
 @main.command(name="clone-experiment")
 @click.argument("experiment", type=int)
 @click.argument("data", type=str, required=False, default="")
-@click.option("--interactive/--no-interactive", "-i", help="Update a result interactively", default=False)
-def clone_experiment(experiment, data, interactive):
+def clone_experiment(experiment, data):
     """Clone an experiment"""
 
     if data == "":
