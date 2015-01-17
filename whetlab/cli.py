@@ -13,6 +13,11 @@ _host_url = None
 _default_host_url = "https://www.whetlab.com/"
 _api_suffix = "/api/alpha/" # note the slash at the end
 
+
+# =================================
+# UTILITIES FOR THE COMMANDS
+# =================================
+
 def _force_callback(ctx, param, value):
     if not value:
         ctx.abort()
@@ -117,11 +122,6 @@ def _make_new_access_token():
     _write_config(access_token)
     return access_token
 
-@click.group()
-def main():
-    """A command_line interface for interacting with Whetlab"""
-    pass
-
 def _validate_type(setting_type):
     if setting_type not in ['float', 'integer', 'enum']:
         click.echo("Invalid setting type %s. Must be float, integer or enum" % setting_type)
@@ -137,13 +137,6 @@ def _check_name_is_good(name):
 
 def _validate_name(name):
     return name
-
-    # TODO:
-    # Stricter name validation on the server
-    # if not _check_name_is_good(name):
-    #     click.echo("Name %s is invalid." % name)
-    #     sys.exit()
-    # return name
 
 def _validate_options(options):
     for option in options:
@@ -171,6 +164,59 @@ def _validate_bounds(minimum, maximum, size):
                 click.echo("\nMinimum %s is greater than maximum %s for dimension %d" % (str(mn), str(mx), dim+1))
                 sys.exit()
     return minimum, maximum
+
+# Formatting functions
+format_experiment = lambda exp: OrderedDict([("ID",exp['id']), ("Name",exp['name'])])
+format_setting = lambda setting, setting_keys: OrderedDict([(key,setting[key]) for key in setting_keys])
+def format_result(result, setting_names):
+    out = [("ID",result['id'])]
+    if len(result['variables']):
+        variable_names,variable_values = zip(*[(v['name'],v['value']) 
+                                                for v in result['variables']])
+    else:
+        variable_names,variable_values = [],[]
+    for setting_name in setting_names:
+        if setting_name in variable_names:
+            idx = variable_names.index(setting_name)
+            out += [(variable_names[idx],variable_values[idx])]
+        else:
+            out += [(setting_name,None)]
+    return OrderedDict(out)
+format_experiments = lambda experiments_json: [format_experiment(exp) for exp in experiments_json]
+format_results = lambda results_json,setting_names: [format_result(result,setting_names) for result in results_json]
+def format_settings(settings_json):
+    settings = sorted(settings_json,
+        key=lambda s: (s['isOutput']==False,s['name']))
+    settings = [format_setting(s,sorted(settings[0].keys())) for s in settings]
+    return settings
+
+def do_sort(results_json, results, sortby='id', reverse=False):
+    if sortby in results_json[0].keys():
+        index = sorted(range(len(results_json)), key=lambda k: results_json[k][sortby], reverse=reverse)
+    elif sortby in results[0].keys():
+        index = sorted(range(len(results)), key=lambda k: results[k][sortby], reverse=reverse)
+    else:
+        click.echo("\nCould not find key %s" % sortby)
+        click.echo("Available keys are:")
+        click.echo(results[0].keys()+results_json[0].keys())
+        click.echo("\n")
+        return results_json, results
+    results_json = [results_json[i] for i in index]
+    results = [results[i] for i in index]
+    return results_json, results
+
+
+def _format_output(json_data, output_format="table"):
+    if output_format == "json":
+        return json.dumps(json_data, indent=4)
+    elif output_format == "csv":
+        csv_string = ",".join(json_data[0].keys()) # the header
+        csv_string += "\n" # newline
+        for data in json_data: # each result
+            csv_string += ",".join([str(i) for i in data.values()])+"\n"
+        return csv_string
+    elif output_format == "table":
+        return tabulate(json_data, headers='keys', numalign='center', stralign='center')
 
 def _count(val):
     """Count the number of entries in val, robust to scalars and iterables"""
@@ -331,7 +377,24 @@ def prompt_experiment(experiment=None):
 
     return out_experiment
 
-# TODO: TEST
+
+
+
+
+
+
+
+
+
+# =================================
+# ACTUAL COMMANDS
+# =================================
+
+@click.group()
+def main():
+    """A command line interface for interacting with Whetlab"""
+    pass
+
 @main.command(name="update")
 def update():
     """Update the whetlab CLI tool.
@@ -378,61 +441,6 @@ def request_new_token():
     access_token = _make_new_access_token()
     click.echo("\nNew access token:\n%s\n" % access_token)
     click.echo("Your config file has also been updated.")
-
-# Formatting functions
-format_experiment = lambda exp: OrderedDict([("ID",exp['id']), ("Name",exp['name'])])
-format_setting = lambda setting, setting_keys: OrderedDict([(key,setting[key]) for key in setting_keys])
-def format_result(result, setting_names):
-    out = [("ID",result['id'])]
-    if len(result['variables']):
-        variable_names,variable_values = zip(*[(v['name'],v['value']) 
-                                                for v in result['variables']])
-    else:
-        variable_names,variable_values = [],[]
-    for setting_name in setting_names:
-        if setting_name in variable_names:
-            idx = variable_names.index(setting_name)
-            out += [(variable_names[idx],variable_values[idx])]
-        else:
-            out += [(setting_name,None)]
-    return OrderedDict(out)
-format_experiments = lambda experiments_json: [format_experiment(exp) for exp in experiments_json]
-format_results = lambda results_json,setting_names: [format_result(result,setting_names) for result in results_json]
-def format_settings(settings_json):
-    settings = sorted(settings_json,
-        key=lambda s: (s['isOutput']==False,s['name']))
-    settings = [format_setting(s,sorted(settings[0].keys())) for s in settings]
-    return settings
-
-def do_sort(results_json, results, sortby='id', reverse=False):
-    if sortby in results_json[0].keys():
-        index = sorted(range(len(results_json)), key=lambda k: results_json[k][sortby], reverse=reverse)
-    elif sortby in results[0].keys():
-        index = sorted(range(len(results)), key=lambda k: results[k][sortby], reverse=reverse)
-    else:
-        click.echo("\nCould not find key %s" % sortby)
-        click.echo("Available keys are:")
-        click.echo(results[0].keys()+results_json[0].keys())
-        click.echo("\n")
-        return results_json, results
-    results_json = [results_json[i] for i in index]
-    results = [results[i] for i in index]
-    return results_json, results
-
-# def _format_experiments()
-
-
-def _format_output(json_data, output_format="table"):
-    if output_format == "json":
-        return json.dumps(json_data, indent=4)
-    elif output_format == "csv":
-        csv_string = ",".join(json_data[0].keys()) # the header
-        csv_string += "\n" # newline
-        for data in json_data: # each result
-            csv_string += ",".join([str(i) for i in data.values()])+"\n"
-        return csv_string
-    elif output_format == "table":
-        return tabulate(json_data, headers='keys', numalign='center', stralign='center')
     
 @main.command(name="get-results")
 @click.argument("experiment", type=int)

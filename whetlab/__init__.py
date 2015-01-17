@@ -9,6 +9,7 @@ import time
 import re
 import functools
 import requests
+import json
 from whetlab.server.error.client_error import *
 
 def catch_exception(f):
@@ -376,6 +377,7 @@ class Experiment:
                 access_token = config['access_token']
             else:
                 raise Exception("No access token specified in dotfile or via constructor.")
+        self._access_token = access_token
 
         self._client = SimpleREST(access_token, url)
 
@@ -485,7 +487,6 @@ class Experiment:
         pending = self.pending()
         if len(pending) > 0:
             print "INFO: this experiment currently has "+str(len(pending))+" jobs (results) that are pending."
-
 
     @catch_exception
     def _sync_with_server(self):
@@ -868,6 +869,16 @@ class Experiment:
 
         return result
     
+    @catch_exception
+    def hypers(self):
+        from cli import _format_auth, make_url, _check_request
+        auth, headers = _format_auth(None, None, self._access_token)
+        # TODO: it might be nice to have experiments/%d/hypers as an endpoint. That's less REST-y, though.
+        r = requests.get(make_url("experiments/%d/?page_size=99999&showresults=1"%self.experiment_id), auth=auth, headers=headers)
+        _check_request(r)
+        hypers = json.loads(r.json()['hypers'])
+        return hypers
+
     @catch_exception
     def report(self):
         """
