@@ -1,8 +1,6 @@
 import os
 import ast
-import tempfile
 import ConfigParser
-import collections
 import numpy as np
 import server
 import time
@@ -11,6 +9,7 @@ import functools
 import requests
 import json
 from whetlab.server.error.client_error import *
+
 
 def catch_exception(f):
     @functools.wraps(f)
@@ -73,6 +72,7 @@ outcome_legal_values = {'size':set([1]),
             'scale':set(['linear']),
             'type':set(['float'])}
 
+
 @catch_exception
 def _reformat_float(rest_param):
     """
@@ -93,6 +93,7 @@ def _reformat_float(rest_param):
 
     return {'type':type,'min':min,'max':max,
             'size':size,'units':units,'scale':scale}
+
 
 @catch_exception
 def _reformat_integer(rest_param):
@@ -115,6 +116,7 @@ def _reformat_integer(rest_param):
     return {'type':type,'min':min,'max':max,
             'size':size,'units':units,'scale':scale}
 
+
 @catch_exception
 def _reformat_enum(rest_param):
     """
@@ -131,6 +133,7 @@ def _reformat_enum(rest_param):
     size       = rest_param['size']
 
     return {'type':type,'options':options,'size':size}
+
 
 @catch_exception
 def _validate_integer(name, properties):
@@ -171,6 +174,7 @@ def _validate_integer(name, properties):
         if properties[property] not in legals:
             raise ValueError("Parameter '" +name+ "': invalid value for property '" + property+"'")
 
+
 @catch_exception
 def _validate_float(name, properties):
     """
@@ -206,6 +210,7 @@ def _validate_float(name, properties):
     for property, legals in legal_values.iteritems():
         if properties[property] not in legals:
             raise ValueError("Parameter '" +name+ "': invalid value for property '" + property+"'")
+
 
 
 @catch_exception
@@ -251,6 +256,7 @@ validate = {'integer': _validate_integer,
             'float'  : _validate_float,
             'enum'   : _validate_enum}
 
+
 @catch_exception
 def delete_experiment(name='Default name', access_token=None):
     """
@@ -270,6 +276,7 @@ def delete_experiment(name='Default name', access_token=None):
         raise ValueError('Could not delete experiment \''+name+'\' (either it doesn\'t exist or access token is invalid)')
     scientist._client.delete_experiment(scientist.experiment_id)
 
+
 @catch_exception
 def find_config_file():
     filename = '.whetlab'
@@ -279,6 +286,7 @@ def find_config_file():
         if os.path.exists(full_path):
             return full_path
     return None
+
 
 @catch_exception
 def load_config():
@@ -349,6 +357,7 @@ class Experiment:
     :type experiment_id: int
     """
 
+    
     @catch_exception
     def __init__(self,
                  name,
@@ -488,6 +497,7 @@ class Experiment:
         if len(pending) > 0:
             print "INFO: this experiment currently has "+str(len(pending))+" jobs (results) that are pending."
 
+    
     @catch_exception
     def _sync_with_server(self):
         """
@@ -536,6 +546,7 @@ class Experiment:
                 else:
                     self._ids_to_param_values[res_id][v['name']] = v['value']
 
+    
     @catch_exception
     def suggest(self):
         """
@@ -578,6 +589,7 @@ class Experiment:
 
         return next
 
+    
     @catch_exception
     def get_by_result_id(self, id):
         """
@@ -604,6 +616,7 @@ class Experiment:
 
         return result
 
+    
     @catch_exception
     def get_id(self, param_values):
         """
@@ -633,6 +646,7 @@ class Experiment:
 
         return id
 
+    
     @catch_exception
     def get_all_results(self):
         """
@@ -657,6 +671,7 @@ class Experiment:
 
         return jobs, outcomes
 
+    
     @catch_exception
     def cancel_by_result_id(self, id):
         """
@@ -668,6 +683,7 @@ class Experiment:
 
         self._client.delete_result(id)
 
+    
     @catch_exception
     def update_by_result_id(self, result_id, outcome_val):
         """
@@ -695,6 +711,7 @@ class Experiment:
         self._client.update_result(result_id,result)
         self._ids_to_outcome_values[result_id] = outcome_val
 
+    
     @catch_exception
     def update(self, param_values, outcome_val):
         """
@@ -786,6 +803,7 @@ class Experiment:
                 self._client.update_result(result_id,result)
                 self._ids_to_outcome_values[result_id] = outcome_val
 
+    
     @catch_exception
     def cancel(self,param_values):
         """
@@ -809,6 +827,7 @@ class Experiment:
         else:
             print 'Did not find experiment with the provided parameters'
 
+    
     @catch_exception
     def pending(self):
         """
@@ -877,8 +896,67 @@ class Experiment:
         r = requests.get(make_url("experiments/%d/?page_size=99999&showresults=1"%self.experiment_id), auth=auth, headers=headers)
         _check_request(r)
         hypers = json.loads(r.json()['hypers'])
-        return hypers
+        if "objective" in hypers:
+            if "hypers" in hypers['objective']:
+                return hypers['objective']['hypers']
+        return None
 
+    @catch_exception
+    def parameter_importances(self, lower_bound=10, upper_bound=90):
+        """
+        Return the relative importance of each parameter
+        """
+
+        assert lower_bound < upper_bound, "Lower bound must be lower than upper bound"
+        assert (0 <= lower_bound <= 100) and (0 <= upper_bound <= 100), "Bounds must be between 0 and 100"
+
+        # Retrieve the length scales
+        setting_ids = dict([(str(v),k) for k,v in 
+                       self._param_names_to_setting_ids.items() 
+                       if k != self.outcome_name])
+        ls = {}
+        for setting_name in setting_ids.values():
+            ls[setting_name] = []
+        for h in self.hypers():
+            for setting_id,setting_name in setting_ids.items():
+                if "ls" in h[setting_id]:
+                    ls[setting_name].append(h[setting_id]['ls'])
+                else:
+                    ls[setting_name].append(np.nan)  # enums will not have length scale
+
+        # Turn into arrays
+        for k in ls.keys():
+            ls[k] = np.array(ls[k])
+            
+        # Normalize per sample
+        for i in range(len(ls.values()[0])):
+            norm = np.nansum(np.hstack([ls[k][i] for k in ls.keys()]))
+            for k in ls.keys():
+                ls[k][i] = ls[k][i]/norm        
+
+        median = dict([(k,np.percentile(v,50)) for k,v in ls.items()])
+        lower = dict([(k,np.percentile(v,lower_bound)) for k,v in ls.items()])
+        upper = dict([(k,np.percentile(v,upper_bound)) for k,v in ls.items()])
+        return median, lower, upper
+
+    @catch_exception
+    def plot_importances(self, lower_bound=10, upper_bound=90):
+        import pylab as plt
+
+        median, lower, upper = self.parameter_importances(lower_bound, upper_bound)
+
+        width = 1.0
+        for i,key in enumerate(median.keys()):
+            plt.bar(i,median[key],width=width)
+            plt.vlines(i+width/2.0,lower[key], upper[key])
+        plt.xticks(width/2.0+np.arange(len(median.keys())), median.keys())
+        plt.ylabel("Parameter importance")
+        plt.ylim(0,1.2)
+        l,u = plt.xlim()
+        l = l-width/4.0
+        u = u+width/4.0
+        plt.xlim(l,u)
+        
     @catch_exception
     def report(self):
         """
