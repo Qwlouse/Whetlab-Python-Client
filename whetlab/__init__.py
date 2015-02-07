@@ -890,6 +890,12 @@ class Experiment:
     
     @catch_exception
     def hypers(self):
+        """
+        Return the hyperparameters for the current experiment.
+        
+        :return: Hyperparameters for the current experiment.
+        :rtype: dict
+        """
         from cli import _format_auth, make_url, _check_request
         auth, headers = _format_auth(None, None, self._access_token)
         # TODO: it might be nice to have experiments/%d/hypers as an endpoint. That's less REST-y, though.
@@ -905,6 +911,18 @@ class Experiment:
     def parameter_importances(self, lower_bound=10, upper_bound=90):
         """
         Return the relative importance of each parameter
+
+        :param name: Lower bound of credible intervals (default: 10%)
+        :type name: int
+        :param name: Upper bound of credible intervals (default 90%)
+        :type name: int
+
+        :return: Lower bound of credible interval for all parameter importances(enums return NaN)
+        :rtype: dict
+        :return: Median of credible interval for all parameter importances (enums return NaN)
+        :rtype: dict
+        :return: Upper bound of credible interval for all parameter importances (enums return NaN)
+        :rtype: dict
         """
 
         assert lower_bound < upper_bound, "Lower bound must be lower than upper bound"
@@ -941,6 +959,14 @@ class Experiment:
 
     @catch_exception
     def plot_importances(self, lower_bound=10, upper_bound=90):
+        """
+        Plots the relative importance of each parameter
+        
+        :param name: Lower bound of credible intervals (default: 10%)
+        :type name: int
+        :param name: Upper bound of credible intervals (default 90%)
+        :type name: int
+        """
         import pylab as plt
 
         median, lower, upper = self.parameter_importances(lower_bound, upper_bound)
