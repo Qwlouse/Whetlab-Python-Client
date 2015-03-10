@@ -732,6 +732,12 @@ class Experiment:
             if np.array(value).size != self.parameters[param]['size']:
                 raise ValueError("Parameter '" +param+ "' should be of size "+str(self.parameters[param]['size']))
             
+            if self.parameters[param]['type'] == 'float':
+                try:
+                    value = np.atleast_1d(value).astype('float')
+                except:
+                    raise TypeError('Parameter ' + param + ' must be of type float.')
+
             if self.parameters[param]['type'] == 'float' or self.parameters[param]['type'] == 'integer':
                 if ((not np.all(np.isfinite(value))) or
                      np.any(np.array(value) < self.parameters[param]['min']) or
