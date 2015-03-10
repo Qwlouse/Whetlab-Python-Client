@@ -736,7 +736,7 @@ class Experiment:
                 try:
                     value = np.atleast_1d(value).astype('float')
                 except:
-                    raise TypeError('Parameter ' + param + ' must be of type float.')
+                    raise TypeError('Parameter ' + str(param) + ' must be of type float.')
 
             if self.parameters[param]['type'] == 'float' or self.parameters[param]['type'] == 'integer':
                 if ((not np.all(np.isfinite(value))) or
@@ -759,7 +759,7 @@ class Experiment:
             if isinstance(value, basestring): #basestr includes unicode
                 value_type = str
             if value_type != python_types[self.parameters[param]['type']]:
-                raise TypeError("Parameter '" +param+ "' should be of type " + python_types[self.parameters[param]['type']])
+                raise TypeError("Parameter '" +param+ "' should be of type " + str(python_types[self.parameters[param]['type']]))
 
         # Check is all parameter values are specified
         for param in self.parameters.keys():
