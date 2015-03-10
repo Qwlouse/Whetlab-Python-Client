@@ -785,7 +785,7 @@ class TestExperiment:
                                        parameters=default_parameters,
                                        outcome=default_outcome)
 
-        scientist.update({'p1':5,'p2':1},5)
+        scientist.update({'p1':'foo','p2':1},5)
 
     def test_create_experiment_with_defaults(self):
         """ Can create experiment with floats/integers simply by specifying min/max."""
