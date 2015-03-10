@@ -595,6 +595,21 @@ class TestExperiment:
         assert( cmp(scientist._ids_to_param_values.values()[0],{'p1':5.1,'p2':5}) == 0 )
         assert( cmp(scientist._ids_to_outcome_values.values()[0],20) == 0 )
 
+    def test_update_as_failed(self):
+        """ Update of failed results have -np.inf as outcome. """
+
+        scientist = whetlab.Experiment(access_token=default_access_token,
+                                       name=self.name,
+                                       description=default_description,
+                                       parameters=default_parameters,
+                                       outcome=default_outcome)
+
+        scientist.update_as_failed({'p1':5.1,'p2':5})
+
+        # Make sure result was added
+        scientist._sync_with_server()
+        assert( cmp(float(scientist._ids_to_outcome_values.values()[0]),-np.inf) == 0 )
+
     def test_suggest_twice(self):
         """ Calling suggest twice returns two different jobs. """
 

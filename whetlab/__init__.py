@@ -675,7 +675,7 @@ class Experiment:
     @catch_exception
     def cancel_by_result_id(self, id):
         """
-        Delete the experiment indexed by the given unique job/result ``id``.
+        Delete the job/result indexed by the given unique job/result ``id``.
 
         :param id: Unique result identifier
         :type id: int
@@ -809,7 +809,17 @@ class Experiment:
                 self._client.update_result(result_id,result)
                 self._ids_to_outcome_values[result_id] = outcome_val
 
+    @catch_exception
+    def update_as_failed(self, param_values):
+        """
+        Inform the experiment that the job with certain parameter values failed.
+
+        :param param_values: Values of parameters.
+        :type param_values: dict
+        """
     
+        self.update(param_values,-np.inf)
+
     @catch_exception
     def cancel(self,param_values):
         """
