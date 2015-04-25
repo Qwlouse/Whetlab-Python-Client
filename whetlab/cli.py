@@ -665,8 +665,6 @@ def delete_result(results):
         _check_request(r)
     return 
 
-
-
 @main.command(name="update-experiment")
 @click.argument("experiment", type=int)
 @click.argument("data", type=str, required=False, default="")
@@ -746,6 +744,8 @@ def update_result(result, data, interactive):
         # Turn it into JSON
         data = json.dumps(result_data)
 
+    print data
+
     # Send it out over the wire
     headers['content-type'] = 'application/json'
     r = requests.patch(make_url("results/%d/"%result), data=data, auth=auth, headers=headers)
@@ -787,7 +787,7 @@ def update_setting(setting, data, force):
 
 @main.command(name="new-experiment")
 @click.argument("data", type=str, required=False, default="")
-@click.option("--interactive/--no-interactive", "-i", help="Update a result interactively", default=True)
+@click.option("--interactive/--no-interactive", "-i", help="Create a result interactively", default=True)
 def new_experiment(data, interactive):
     """Create the results, settings, name or description of an experiment
     """
