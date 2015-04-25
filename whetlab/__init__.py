@@ -675,7 +675,7 @@ class Experiment:
     @catch_exception
     def cancel_by_result_id(self, id):
         """
-        Delete the experiment indexed by the given unique job/result ``id``.
+        Delete the job/result indexed by the given unique job/result ``id``.
 
         :param id: Unique result identifier
         :type id: int
@@ -732,6 +732,12 @@ class Experiment:
             if np.array(value).size != self.parameters[param]['size']:
                 raise ValueError("Parameter '" +param+ "' should be of size "+str(self.parameters[param]['size']))
             
+            if self.parameters[param]['type'] == 'float':
+                try:
+                    value = np.atleast_1d(value).astype('float')
+                except:
+                    raise TypeError('Parameter ' + str(param) + ' must be of type float.')
+
             if self.parameters[param]['type'] == 'float' or self.parameters[param]['type'] == 'integer':
                 if ((not np.all(np.isfinite(value))) or
                      np.any(np.array(value) < self.parameters[param]['min']) or
@@ -753,7 +759,7 @@ class Experiment:
             if isinstance(value, basestring): #basestr includes unicode
                 value_type = str
             if value_type != python_types[self.parameters[param]['type']]:
-                raise TypeError("Parameter '" +param+ "' should be of type " + python_types[self.parameters[param]['type']])
+                raise TypeError("Parameter '" +param+ "' should be of type " + str(python_types[self.parameters[param]['type']]))
 
         # Check is all parameter values are specified
         for param in self.parameters.keys():
@@ -803,7 +809,17 @@ class Experiment:
                 self._client.update_result(result_id,result)
                 self._ids_to_outcome_values[result_id] = outcome_val
 
+    @catch_exception
+    def update_as_failed(self, param_values):
+        """
+        Inform the experiment that the job with certain parameter values failed.
+
+        :param param_values: Values of parameters.
+        :type param_values: dict
+        """
     
+        self.update(param_values,-np.inf)
+
     @catch_exception
     def cancel(self,param_values):
         """
