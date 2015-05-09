@@ -8,6 +8,8 @@ from tabulate import tabulate
 import json
 from collections import OrderedDict
 import urlparse
+import unicodedata
+import string
 
 _host_url = None
 _default_host_url = "https://www.whetlab.com/"
@@ -17,6 +19,13 @@ _api_suffix = "/api/alpha/" # note the slash at the end
 # =================================
 # UTILITIES FOR THE COMMANDS
 # =================================
+
+
+
+def _normalize_filename(filename):
+    validFilenameChars = "-_.() %s%s" % (string.ascii_letters, string.digits)
+    cleanedFilename = unicodedata.normalize('NFKD', filename).encode('ASCII', 'ignore')
+    return ''.join(c for c in cleanedFilename if c in validFilenameChars)
 
 def _force_callback(ctx, param, value):
     if not value:
@@ -94,7 +103,7 @@ def _format_auth(username=None, password=None, access_token=None):
 
 def _get_access_token_from_server():
     auth, headers = _get_auth()
-    r = requests.get(make_url("access-token/"), auth=auth, headers=headers)
+    r = requests.get(make_url("access-token/"), auth=auth, headers=headers, verify=False)
     _check_request(r)
 
     out = r.json()
@@ -215,6 +224,13 @@ def _format_output(json_data, output_format="table"):
         for data in json_data: # each result
             csv_string += ",".join([str(i) for i in data.values()])+"\n"
         return csv_string
+    elif output_format == "tsv":
+        tsv_string = "\t".join(json_data[0].keys()) # the header
+        tsv_string += "\n" # newline
+        for data in json_data: # each result
+            tsv_string += "\t".join([str(i) for i in data.values()])+"\n"
+        return tsv_string
+
     elif output_format == "table":
         return tabulate(json_data, headers='keys', numalign='center', stralign='center')
 
@@ -453,7 +469,7 @@ def get_results(experiment, output_format, sortby, reverse):
     """List all results from a particular experiment
     """
     auth, headers = _get_auth()
-    r = requests.get(make_url("experiments/%d/?page_size=99999&showresults=1"%experiment), auth=auth, headers=headers)
+    r = requests.get(make_url("experiments/%d/?page_size=99999&showresults=1"%experiment), auth=auth, headers=headers, verify=False)
     _check_request(r)
 
     experiment_data = r.json()
@@ -486,7 +502,7 @@ def best_result(experiment, output_format):
     """Display the current best result
     """
     auth, headers = _get_auth()
-    r = requests.get(make_url("experiments/%d/?showresults=1"%experiment), auth=auth, headers=headers)
+    r = requests.get(make_url("experiments/%d/?showresults=1"%experiment), auth=auth, headers=headers, verify=False)
     _check_request(r)
 
     experiment_data = r.json()
@@ -522,7 +538,7 @@ def get_experiments(output_format,sortby,reverse):
     in the --full (or -f) flag to dump everything.
     """
     auth, headers = _get_auth()
-    r = requests.get(make_url("experiments/?page_size=99999"), auth=auth, headers=headers)
+    r = requests.get(make_url("experiments/?page_size=99999"), auth=auth, headers=headers, verify=False)
     _check_request(r)
 
     experiments_json = r.json()['results']
@@ -541,7 +557,7 @@ def get_result(result, output_format):
     """Get all data for a single result by ID
     """
     auth, headers = _get_auth()
-    r = requests.get(make_url("results/%d/"%result), auth=auth, headers=headers)
+    r = requests.get(make_url("results/%d/"%result), auth=auth, headers=headers, verify=False)
     _check_request(r)
     result_json = r.json()
     setting_names = sorted([v['name'] for v in result_json['variables']])
@@ -559,7 +575,7 @@ def get_experiment(experiment, output_format):
     """List all data from an experiment
     """
     auth, headers = _get_auth()
-    r = requests.get(make_url("experiments/%d/?showresults=1"%experiment), auth=auth, headers=headers)
+    r = requests.get(make_url("experiments/%d/?showresults=1"%experiment), auth=auth, headers=headers, verify=False)
     _check_request(r)
 
     experiment_data = r.json()
@@ -603,7 +619,7 @@ def get_settings(experiment, output_format, sortby, reverse):
     """Get all settings from an experiment
     """
     auth, headers = _get_auth()
-    r = requests.get(make_url("settings/?page_size=99999&experiment=%d"%experiment), auth=auth, headers=headers)
+    r = requests.get(make_url("settings/?page_size=99999&experiment=%d"%experiment), auth=auth, headers=headers, verify=False)
     _check_request(r)
 
     settings_json = r.json()
@@ -630,7 +646,7 @@ def get_setting(setting, output_format):
     """Get all data for a single setting by ID
     """
     auth, headers = _get_auth()
-    r = requests.get(make_url("settings/%d/"%setting), auth=auth, headers=headers)
+    r = requests.get(make_url("settings/%d/"%setting), auth=auth, headers=headers, verify=False)
     _check_request(r)
 
     setting_json = r.json()
@@ -691,7 +707,7 @@ def update_experiment(experiment, data, interactive):
     # If data wasn't passed in as a JSON string, or piped,
     # then we'll grab it interactively
     if data == "":
-        r = requests.get(make_url("experiments/%d/"%experiment), auth=auth, headers=headers)
+        r = requests.get(make_url("experiments/%d/"%experiment), auth=auth, headers=headers, verify=False)
         _check_request(r)
         experiment_data = r.json()
         experiment_data = prompt_experiment(experiment_data)
@@ -701,54 +717,40 @@ def update_experiment(experiment, data, interactive):
     r = requests.patch(make_url("experiments/%d/"%experiment), data=data, auth=auth, headers=headers)
     _check_request(r)
 
-@main.command(name="update-result")
+@main.command(name="update-result-outcome")
 @click.argument("result", type=int)
-@click.argument("data", type=str, required=False, default="")
-@click.option("--interactive/--no-interactive", "-i", help="Update a result interactively", default=True)
-def update_result(result, data, interactive):
-    """Update the results, settings, name or description of an result
+@click.argument("outcome", type=float, required=True)
+def update_result_outcome(result, outcome,):
+    """Update the outcome of a result
     """
-
-    if data == "":
-        if select.select([sys.stdin,],[],[],0.0)[0]:
-            for line in sys.stdin:
-                if not line: 
-                    break
-                data += line
-        else:
-            # If we do not want to allow interactive updating, then exit
-            if not interactive:
-                click.echo("No data provided.")
-                return
 
     auth, headers = _get_auth()
 
-    # If data wasn't passed in as a JSON string, or piped,
-    # then we'll grab it interactively
-    if data == "":
+    # First, get the result to update
+    r = requests.get(make_url("results/%d/"%result), auth=auth, headers=headers, verify=False)
+    _check_request(r)
+    result_data = r.json()
 
-        # First, get the result to update
-        r = requests.get(make_url("results/%d/"%result), auth=auth, headers=headers)
-        _check_request(r)
-        result_data = r.json()
+    # Figure out which variable is the output variable
+    r = requests.get(make_url("settings/?page_size=99999&experiment=%d"%result_data['experiment']), auth=auth, headers=headers, verify=False)
+    _check_request(r)
 
-        # Get the settings (so that we might order the variables properly)
-        experiment = result_data['experiment']
-        r = requests.get(make_url("settings/?page_size=99999&experiment=%d"%experiment), auth=auth, headers=headers)
-        _check_request(r)
-        settings = format_settings(r.json()['results'])
+    # Format the settings (sets the output setting to be the first entry)
+    settings = format_settings(r.json()['results'])
+    output_setting_name = settings[0]['name']
 
-        # Get the result data
-        result_data = prompt_result(result_data, settings)
+    if "variables" not in result_data:
+        click.echo("No variables found in result %d. Exiting" % result)
+        sys.exit(0)
+    for i,var in enumerate(result_data['variables']):
+        if var['name'] == output_setting_name:
+            result_data['variables'][i]['value'] = outcome
+    result_data = json.dumps(result_data) 
 
-        # Turn it into JSON
-        data = json.dumps(result_data)
 
-    print data
-
-    # Send it out over the wire
+    # send it out over the wire
     headers['content-type'] = 'application/json'
-    r = requests.patch(make_url("results/%d/"%result), data=data, auth=auth, headers=headers)
+    r = requests.patch(make_url("results/%d/"%result), data=result_data, auth=auth, headers=headers, verify=False)
     _check_request(r)
 
 @main.command(name="update-setting")
@@ -852,7 +854,7 @@ def new_experiment(data, interactive):
 
 #     # First, get the experiment we'd like to clone
 #     auth, headers = _get_auth()
-#     r = requests.get(make_url("experiments/%d/?showresults=1"%experiment), auth=auth, headers=headers)
+#     r = requests.get(m, verify=Falseake_url("experiments/%d/?showresults=1"%experiment), auth=auth, headers=headers)
 #     _check_request(r)
 #     experiment_data = r.json()
 #     if not experiment_data.has_key("results"):
@@ -901,7 +903,7 @@ def new_experiment(data, interactive):
 #     experiment_id = r.json()['id']
 
 #     # Match the new settings to the result variables
-#     r = requests.get(make_url("settings/?page_size=99999&experiment=%d"%experiment_id), auth=auth, headers=headers)
+#     r = requests.get(m, verify=Falseake_url("settings/?page_size=99999&experiment=%d"%experiment_id), auth=auth, headers=headers)
 #     _check_request(r)
 #     new_settings = format_settings(r.json()['results']) # this is to get the IDs only, really.
 
@@ -979,7 +981,7 @@ def new_result(experiment, data, interactive):
     # If data wasn't passed in as a JSON string, or piped,
     # then we'll grab it interactively
     if data == "":
-        r = requests.get(make_url("settings/?page_size=99999&experiment=%d"%experiment), auth=auth, headers=headers)
+        r = requests.get(make_url("settings/?page_size=99999&experiment=%d"%experiment), auth=auth, headers=headers, verify=False)
         _check_request(r)
         settings = format_settings(r.json()['results'])
 
@@ -1015,6 +1017,54 @@ def clone_experiment(experiment, data):
     r = requests.post(make_url("experiments/%d/clone/"%experiment), data=data, auth=auth, headers=headers)
     _check_request(r)
 
+@main.command(name="get-all-data")
+@click.argument("destination", type=click.Path())
+@click.option("--json", 'output_format', flag_value='json', help='Format output as JSON')
+@click.option("--tsv", 'output_format', flag_value='tsv', help='Format output as TSV (but using tabs, because of vectors)')
+def get_all_data(destination, output_format):
+    """Download all data in TSV or JSON format, saving it locally to a destination file"""
+    auth,headers = _get_auth()
+    r = requests.get(make_url("experiments/?showresults=1"), auth=auth, headers=headers, verify=False)
+    _check_request(r)
+    all_data = r.json()
+
+    # If we want JSON, just dump it to a file
+    if output_format == "json":
+        out_data = _format_output(all_data, output_format)
+        if os.path.splitext(destination)[-1] != ".json":
+            destination = os.path.splitext(destination)[0] + ".json"
+        with open(destination, "wt") as f:
+            f.write(out_data)
+
+    # If we want TSV, create a folder, and dump each experiment in those folders.
+    elif output_format == "tsv":
+
+        # Make a folder
+        if not os.path.isdir(destination):
+            if os.path.isfile(destination):
+                click.echo("Please specify a path to a directory, not a file")
+            else:            
+                try:
+                    os.mkdir(destination)
+                except OSError as e:
+                    click.echo(e)
+
+        # Stick tsvs in the folder
+        for experiment in all_data:
+            settings = format_settings(experiment['settings'])
+            results = format_results(experiment['results'], [s['name'] for s in settings])
+            name = experiment['name']
+            click.echo(name)
+            if len(settings):
+                print 'hi'
+                with open(os.path.join(destination, _normalize_filename(name+"-settings.tsv")), "wt") as f:
+                    f.write(_format_output(settings, output_format))
+            if len(results):
+                with open(os.path.join(destination,_normalize_filename(name+"-results.tsv")), "wt") as f:
+                    out = _format_output(results, output_format)
+                    print(out)
+                    f.write(out)
+            # click.echo(name)
 
 @main.command(name="suggest")
 @click.argument("experiment", type=int)
@@ -1033,7 +1083,7 @@ def suggest(experiment, sync, output_format):
     result_id = r.json()['id']
     if sync:
         while 1:
-            r = requests.get(make_url("results/%d/"%result_id), auth=auth, headers=headers)
+            r = requests.get(make_url("results/%d/"%result_id), auth=auth, headers=headers, verify=False)
             _check_request(r)
             result_json = r.json()
             if result_json['suggestionDate'] is None: 
