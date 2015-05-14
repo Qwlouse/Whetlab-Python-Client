@@ -103,7 +103,7 @@ def _format_auth(username=None, password=None, access_token=None):
 
 def _get_access_token_from_server():
     auth, headers = _get_auth()
-    r = requests.get(make_url("access-token/"), auth=auth, headers=headers, verify=False)
+    r = requests.get(make_url("access-token/"), auth=auth, headers=headers)
     _check_request(r)
 
     out = r.json()
@@ -469,7 +469,7 @@ def get_results(experiment, output_format, sortby, reverse):
     """List all results from a particular experiment
     """
     auth, headers = _get_auth()
-    r = requests.get(make_url("experiments/%d/?page_size=99999&showresults=1"%experiment), auth=auth, headers=headers, verify=False)
+    r = requests.get(make_url("experiments/%d/?page_size=99999&showresults=1"%experiment), auth=auth, headers=headers)
     _check_request(r)
 
     experiment_data = r.json()
@@ -502,7 +502,7 @@ def best_result(experiment, output_format):
     """Display the current best result
     """
     auth, headers = _get_auth()
-    r = requests.get(make_url("experiments/%d/?showresults=1"%experiment), auth=auth, headers=headers, verify=False)
+    r = requests.get(make_url("experiments/%d/?showresults=1"%experiment), auth=auth, headers=headers)
     _check_request(r)
 
     experiment_data = r.json()
@@ -538,7 +538,7 @@ def get_experiments(output_format,sortby,reverse):
     in the --full (or -f) flag to dump everything.
     """
     auth, headers = _get_auth()
-    r = requests.get(make_url("experiments/?page_size=99999"), auth=auth, headers=headers, verify=False)
+    r = requests.get(make_url("experiments/?page_size=99999"), auth=auth, headers=headers)
     _check_request(r)
 
     experiments_json = r.json()['results']
@@ -557,7 +557,7 @@ def get_result(result, output_format):
     """Get all data for a single result by ID
     """
     auth, headers = _get_auth()
-    r = requests.get(make_url("results/%d/"%result), auth=auth, headers=headers, verify=False)
+    r = requests.get(make_url("results/%d/"%result), auth=auth, headers=headers)
     _check_request(r)
     result_json = r.json()
     setting_names = sorted([v['name'] for v in result_json['variables']])
@@ -575,7 +575,7 @@ def get_experiment(experiment, output_format):
     """List all data from an experiment
     """
     auth, headers = _get_auth()
-    r = requests.get(make_url("experiments/%d/?showresults=1"%experiment), auth=auth, headers=headers, verify=False)
+    r = requests.get(make_url("experiments/%d/?showresults=1"%experiment), auth=auth, headers=headers)
     _check_request(r)
 
     experiment_data = r.json()
@@ -619,7 +619,7 @@ def get_settings(experiment, output_format, sortby, reverse):
     """Get all settings from an experiment
     """
     auth, headers = _get_auth()
-    r = requests.get(make_url("settings/?page_size=99999&experiment=%d"%experiment), auth=auth, headers=headers, verify=False)
+    r = requests.get(make_url("settings/?page_size=99999&experiment=%d"%experiment), auth=auth, headers=headers)
     _check_request(r)
 
     settings_json = r.json()
@@ -646,7 +646,7 @@ def get_setting(setting, output_format):
     """Get all data for a single setting by ID
     """
     auth, headers = _get_auth()
-    r = requests.get(make_url("settings/%d/"%setting), auth=auth, headers=headers, verify=False)
+    r = requests.get(make_url("settings/%d/"%setting), auth=auth, headers=headers)
     _check_request(r)
 
     setting_json = r.json()
@@ -707,7 +707,7 @@ def update_experiment(experiment, data, interactive):
     # If data wasn't passed in as a JSON string, or piped,
     # then we'll grab it interactively
     if data == "":
-        r = requests.get(make_url("experiments/%d/"%experiment), auth=auth, headers=headers, verify=False)
+        r = requests.get(make_url("experiments/%d/"%experiment), auth=auth, headers=headers)
         _check_request(r)
         experiment_data = r.json()
         experiment_data = prompt_experiment(experiment_data)
@@ -727,12 +727,12 @@ def update_result_outcome(result, outcome,):
     auth, headers = _get_auth()
 
     # First, get the result to update
-    r = requests.get(make_url("results/%d/"%result), auth=auth, headers=headers, verify=False)
+    r = requests.get(make_url("results/%d/"%result), auth=auth, headers=headers)
     _check_request(r)
     result_data = r.json()
 
     # Figure out which variable is the output variable
-    r = requests.get(make_url("settings/?page_size=99999&experiment=%d"%result_data['experiment']), auth=auth, headers=headers, verify=False)
+    r = requests.get(make_url("settings/?page_size=99999&experiment=%d"%result_data['experiment']), auth=auth, headers=headers)
     _check_request(r)
 
     # Format the settings (sets the output setting to be the first entry)
@@ -750,7 +750,7 @@ def update_result_outcome(result, outcome,):
 
     # send it out over the wire
     headers['content-type'] = 'application/json'
-    r = requests.patch(make_url("results/%d/"%result), data=result_data, auth=auth, headers=headers, verify=False)
+    r = requests.patch(make_url("results/%d/"%result), data=result_data, auth=auth, headers=headers)
     _check_request(r)
 
 @main.command(name="update-setting")
@@ -854,7 +854,7 @@ def new_experiment(data, interactive):
 
 #     # First, get the experiment we'd like to clone
 #     auth, headers = _get_auth()
-#     r = requests.get(m, verify=Falseake_url("experiments/%d/?showresults=1"%experiment), auth=auth, headers=headers)
+#     r = requests.get(make_url("experiments/%d/?showresults=1"%experiment), auth=auth, headers=headers)
 #     _check_request(r)
 #     experiment_data = r.json()
 #     if not experiment_data.has_key("results"):
@@ -903,7 +903,7 @@ def new_experiment(data, interactive):
 #     experiment_id = r.json()['id']
 
 #     # Match the new settings to the result variables
-#     r = requests.get(m, verify=Falseake_url("settings/?page_size=99999&experiment=%d"%experiment_id), auth=auth, headers=headers)
+#     r = requests.get(make_url("settings/?page_size=99999&experiment=%d"%experiment_id), auth=auth, headers=headers)
 #     _check_request(r)
 #     new_settings = format_settings(r.json()['results']) # this is to get the IDs only, really.
 
@@ -981,7 +981,7 @@ def new_result(experiment, data, interactive):
     # If data wasn't passed in as a JSON string, or piped,
     # then we'll grab it interactively
     if data == "":
-        r = requests.get(make_url("settings/?page_size=99999&experiment=%d"%experiment), auth=auth, headers=headers, verify=False)
+        r = requests.get(make_url("settings/?page_size=99999&experiment=%d"%experiment), auth=auth, headers=headers)
         _check_request(r)
         settings = format_settings(r.json()['results'])
 
@@ -1024,7 +1024,7 @@ def clone_experiment(experiment, data):
 def get_all_data(destination, output_format):
     """Download all data in TSV or JSON format, saving it locally to a destination file"""
     auth,headers = _get_auth()
-    r = requests.get(make_url("experiments/?showresults=1"), auth=auth, headers=headers, verify=False)
+    r = requests.get(make_url("experiments/?showresults=1"), auth=auth, headers=headers)
     _check_request(r)
     all_data = r.json()
 
@@ -1083,7 +1083,7 @@ def suggest(experiment, sync, output_format):
     result_id = r.json()['id']
     if sync:
         while 1:
-            r = requests.get(make_url("results/%d/"%result_id), auth=auth, headers=headers, verify=False)
+            r = requests.get(make_url("results/%d/"%result_id), auth=auth, headers=headers)
             _check_request(r)
             result_json = r.json()
             if result_json['suggestionDate'] is None: 
