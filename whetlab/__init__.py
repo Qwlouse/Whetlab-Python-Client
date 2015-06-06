@@ -433,12 +433,12 @@ class Experiment:
                 param = {}
                 param.update(parameters[key])
 
-                for property in param.iterkeys():
+                for property in param:
                     if property not in supported_properties:
                         raise ValueError("Parameter '" +key+ "': property '" + property + "' not supported")
 
                 # If not type provided, use default
-                if not param.has_key('type'):
+                if 'type' not in param:
                     param['type'] = default_values['type']
                 ptype = param['type']  
                 
@@ -467,7 +467,7 @@ class Experiment:
                 raise ValueError("Outcome name should not match any of the parameter names")
 
             # Check if all properties are supported
-            for prop in param.iterkeys():
+            for prop in param:
                 if prop not in outcome_supported_properties : raise ValueError("Parameter '" +outcome['name']+ "': property '" + prop + "' not supported")
             
             # Check if required properties are present

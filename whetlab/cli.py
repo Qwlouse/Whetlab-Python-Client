@@ -112,7 +112,7 @@ def _get_access_token_from_server():
     _check_request(r)
 
     out = r.json()
-    if out.has_key("access_token"):
+    if "access_token" in out:
         return r.json()['access_token']
     else:
         return ""
@@ -129,7 +129,7 @@ def _make_new_access_token():
 
     out = r.json()
     print(r.text)
-    if out.has_key("access_token"):
+    if "access_token" in out:
         access_token = r.json()['access_token']
     else:
         access_token = ""
@@ -376,7 +376,7 @@ def prompt_result(result, settings):
 
     variables = []
     for i,(variable,setting) in enumerate(zip(out_result['variables'], settings)):
-        _default_value = None if not variable.has_key("value") else variable['value']
+        _default_value = None if "value" not in variable else variable['value']
 
         expected_type = {"float":float,
                          "integer":int,
@@ -478,7 +478,7 @@ def get_results(experiment, output_format, sortby, reverse):
     _check_request(r)
 
     experiment_data = r.json()
-    if not experiment_data.has_key("results"):
+    if "result" not in experiment_data:
         click.echo("No results for experiment ID %d" % experiment)
         return 
 
@@ -511,7 +511,7 @@ def best_result(experiment, output_format):
     _check_request(r)
 
     experiment_data = r.json()
-    if not experiment_data.has_key("results"):
+    if "result" not in experiment_data:
         click.echo("No results for experiment ID %d" % experiment)
         return 
 
@@ -584,7 +584,7 @@ def get_experiment(experiment, output_format):
     _check_request(r)
 
     experiment_data = r.json()
-    if not experiment_data.has_key("results"):
+    if "results" not in experiment_data:
         click.echo("No results for experiment ID %d" % experiment)
         return 
 
@@ -628,7 +628,7 @@ def get_settings(experiment, output_format, sortby, reverse):
     _check_request(r)
 
     settings_json = r.json()
-    if not settings_json.has_key("results"):
+    if "results" not in settings_json:
         click.echo("No results for experiment ID %d" % experiment)
         return 
     settings_json = settings_json['results']
@@ -862,7 +862,7 @@ def new_experiment(data, interactive):
 #     r = requests.get(make_url("experiments/%d/?showresults=1"%experiment), auth=auth, headers=headers)
 #     _check_request(r)
 #     experiment_data = r.json()
-#     if not experiment_data.has_key("results"):
+#     if "results" not in experiment_data:
 #         click.echo("No results for experiment ID %d" % experiment)
 #         return 
 #     settings_json = experiment_data['settings']
