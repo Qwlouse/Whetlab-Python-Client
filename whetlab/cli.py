@@ -3,7 +3,11 @@
 from __future__ import print_function
 
 import os, sys, select, re
-import ConfigParser
+try:
+    import configparser as ConfigParser
+except ImportError:
+    import ConfigParser
+
 import click, requests, whetlab
 from tabulate import tabulate
 import json

@@ -1,7 +1,12 @@
 from __future__ import print_function
 import os
 import ast
-import ConfigParser
+
+try:
+    import configparser as ConfigParser
+except ImportError:
+    import ConfigParser
+
 import numpy as np
 import server
 import time
