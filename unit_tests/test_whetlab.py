@@ -140,8 +140,8 @@ class TestExperiment:
                                        name=self.name,
                                        description=default_description)
         # Make sure result is still there
-        assert( cmp(scientist._ids_to_param_values.values()[0],{'p1':2.1,'p2':1}) == 0 )
-        assert( cmp(scientist._ids_to_outcome_values.values()[0],3) == 0 )
+        assert scientist._ids_to_param_values.values()[0] == {'p1':2.1,'p2':1}
+        assert scientist._ids_to_outcome_values.values()[0] == 3
 
     @raises(ValueError)
     def test_empty_name(self):
@@ -585,16 +585,16 @@ class TestExperiment:
 
         # Make sure result was added
         scientist._sync_with_server()
-        assert( cmp(scientist._ids_to_param_values.values()[0],{'p1':5.1,'p2':5}) == 0 )
-        assert( cmp(scientist._ids_to_outcome_values.values()[0],10) == 0 )
+        assert scientist._ids_to_param_values.values()[0] == {'p1':5.1,'p2':5}
+        assert scientist._ids_to_outcome_values.values()[0] == 10
 
         # Make sure result was overwritten
         scientist.update({'p1':5.1,'p2':5},20)
         scientist._sync_with_server()
-        assert( len(scientist._ids_to_param_values.values()) == 1 )
-        assert( len(scientist._ids_to_outcome_values.values()) == 1 )
-        assert( cmp(scientist._ids_to_param_values.values()[0],{'p1':5.1,'p2':5}) == 0 )
-        assert( cmp(scientist._ids_to_outcome_values.values()[0],20) == 0 )
+        assert len(scientist._ids_to_param_values.values()) == 1
+        assert len(scientist._ids_to_outcome_values.values()) == 1
+        assert scientist._ids_to_param_values.values()[0] == {'p1':5.1,'p2':5}
+        assert scientist._ids_to_outcome_values.values()[0] == 20
 
     def test_update_as_failed(self):
         """ Update of failed results have -np.inf as outcome. """
@@ -609,7 +609,7 @@ class TestExperiment:
 
         # Make sure result was added
         scientist._sync_with_server()
-        assert( cmp(float(scientist._ids_to_outcome_values.values()[0]),-np.inf) == 0 )
+        assert float(scientist._ids_to_outcome_values.values()[0]) == -np.inf
 
     def test_suggest_twice(self):
         """ Calling suggest twice returns two different jobs. """
@@ -625,7 +625,7 @@ class TestExperiment:
         b = scientist.suggest()
         
         # Two suggested jobs are different
-        assert( cmp(a,b) != 0 )
+        assert a != b
 
     def test_suggest(self):
         """ Suggest return a valid job. """
@@ -674,7 +674,7 @@ class TestExperiment:
         scientist.update({'p1':1.,'p2':1},4)
         scientist.update({'p1':5.,'p2':5},5)
 
-        assert(cmp(scientist.best(),{'p1':5.,'p2':1})==0)
+        assert scientist.best() == {'p1':5.,'p2':1}
 
     def test_best_with_nan(self):
         """ Best returns the best job. """
@@ -694,7 +694,7 @@ class TestExperiment:
         scientist.update({'p1':5.,'p2':2}, np.nan)
         scientist.update({'p1':5.,'p2':7}, np.nan)
 
-        assert(cmp(scientist.best(),{'p1':5.,'p2':1})==0)
+        assert scientist.best() == {'p1':5.,'p2':1}
 
 
     def test_pending(self):
@@ -737,8 +737,8 @@ class TestExperiment:
         # Make sure only result left is "b"
         scientist._sync_with_server()
         print(scientist._ids_to_param_values)
-        assert( cmp(scientist._ids_to_param_values.values()[0],b) == 0 )
-        assert( cmp(scientist._ids_to_outcome_values.values()[0],10) == 0 )
+        assert scientist._ids_to_param_values.values()[0] == b
+        assert scientist._ids_to_outcome_values.values()[0] == 10
 
     @raises(ValueError)
     def test_update_parameter_too_small(self):

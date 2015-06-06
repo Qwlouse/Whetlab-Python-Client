@@ -443,7 +443,7 @@ class Experiment:
                 ptype = param['type']  
                 
                 # Map type 'int' to 'integer'
-                if cmp(ptype,'int') == 0:
+                if ptype == 'int':
                     ptype = 'integer'
                     param['type'] = 'integer'
 
@@ -549,7 +549,7 @@ class Experiment:
             for v in variables:
                 id = v['id']
                 name = v['name']
-                if cmp(name,self.outcome_name) == 0 :
+                if name == self.outcome_name:
                     self._ids_to_outcome_values[res_id] = v['value']
                 else:
                     self._ids_to_param_values[res_id][v['name']] = v['value']
@@ -578,7 +578,7 @@ class Experiment:
         next = {}
         for var in variables:
             # Don't return the outcome variable
-            if cmp(var['name'],self.outcome_name) != 0:
+            if var['name'] != self.outcome_name:
                 if isinstance(var['value'], str):
                     value = ast.literal_eval(var['value'])
                 else:
@@ -649,7 +649,7 @@ class Experiment:
         id = None
 
         for k,v in self._ids_to_param_values.iteritems():
-            if cmp(v,param_values) == 0:
+            if v == param_values:
                 id = k
 
         return id
@@ -1206,7 +1206,7 @@ class SimpleREST:
             # Find in current page whether we find the experiment we are looking for
             rest_exps = rest_exps['results']
             for exp in rest_exps:
-                if cmp(exp['name'],name) == 0:
+                if exp['name'] == name:
                     return exp['id']
         return None
 
