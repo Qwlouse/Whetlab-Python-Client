@@ -1,3 +1,4 @@
+from __future__ import print_function
 from nose.tools import *
 import whetlab, whetlab.server
 from time import time, sleep
@@ -735,7 +736,7 @@ class TestExperiment:
 
         # Make sure only result left is "b"
         scientist._sync_with_server()
-        print scientist._ids_to_param_values
+        print(scientist._ids_to_param_values)
         assert( cmp(scientist._ids_to_param_values.values()[0],b) == 0 )
         assert( cmp(scientist._ids_to_outcome_values.values()[0],10) == 0 )
 

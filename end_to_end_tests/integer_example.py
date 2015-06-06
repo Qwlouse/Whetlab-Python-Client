@@ -1,3 +1,4 @@
+from __future__ import print_function
 import whetlab
 import numpy as np
 
@@ -20,9 +21,9 @@ for i in range(10000):
     job = scientist.suggest()
 
     # Perform experiment
-    print job
+    print(job)
     outcome = f(**job)
-    print i, outcome
+    print(i, outcome)
 
 
     # Inform scientist about the outcome

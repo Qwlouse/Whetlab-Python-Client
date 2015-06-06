@@ -1,3 +1,4 @@
+from __future__ import print_function
 
 from sklearn.datasets import fetch_mldata
 data_set = fetch_mldata('yahoo-web-directory-topics')
@@ -40,5 +41,5 @@ for i in range(n_iterations):
     scientist.update(job,accuracy)
     scientist.report()
 
-print scientist.best()
+print(scientist.best())
 

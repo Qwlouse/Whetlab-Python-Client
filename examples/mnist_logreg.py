@@ -2,7 +2,7 @@
 # deep learning code base.
 # To run this example, first get KAYAK from https://github.com/HIPS/Kayak. Then add Kayak to your PYTHONPATH or
 # install it by navigating into kayak and running `python setup.py install`.
-
+from __future__ import print_function
 import sys
 
 import numpy as np
@@ -10,7 +10,7 @@ import numpy.random as npr
 try:
     import kayak
 except:
-    print "This examples requires the Python library kayak (https://github.com/HIPS/Kayak)"
+    print("This examples requires the Python library kayak (https://github.com/HIPS/Kayak)")
     sys.exit()
 
 import data
@@ -79,17 +79,17 @@ def train(inputs, targets, batch_size, learn_rate, momentum, l1_weight, l2_weigh
             W.value -= learn_rate * mom_grad_W
             B.value -= learn_rate * grad_B
 
-        print "Epoch: %d, total loss: %f" % (epoch, total_loss)
+        print("Epoch: %d, total loss: %f" % (epoch, total_loss))
 
         if not np.isfinite(total_loss):
-            print "Training diverged. Returning constraint violation."
+            print("Training diverged. Returning constraint violation.")
             break
 
         if total_loss < best_loss:
             best_epoch = epoch
         else:
             if (epoch - best_epoch) > improvement_thresh:
-                print "Has been %d epochs without improvement. Aborting." % (epoch-best_epoch)
+                print("Has been %d epochs without improvement. Aborting." % (epoch-best_epoch))
                 break
 
     # After we've trained, we return a sugary little function handle
@@ -147,11 +147,11 @@ def evaluate(batch_size, log10_lr, momentum, log10_l1, log10_l2, dropout, improv
 
         # How did we do?
         acc = np.mean(valid_preds == np.argmax(valid_labels, axis=1))
-        print "Fold %02d: %0.6f" % (ii+1, acc)
+        print("Fold %02d: %0.6f" % (ii+1, acc))
         valid_acc += acc
     
 
-    print "Overall: %0.6f" % (valid_acc / num_folds)
+    print("Overall: %0.6f" % (valid_acc / num_folds))
     return valid_acc / num_folds
 
 def main():
@@ -178,12 +178,12 @@ def main():
         job = scientist.suggest()
 
         # Perform experiment
-        print job
+        print(job)
         outcome = evaluate(**job)
 
         # Inform scientist about the outcome
         scientist.update(job,outcome)
-        print "Reported value %f" % (outcome)
+        print("Reported value %f" % (outcome))
 
 if __name__ == '__main__':
     sys.exit(main())

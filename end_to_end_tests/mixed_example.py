@@ -29,9 +29,9 @@ for i in range(10000):
     job = scientist.suggest()
 
     # Perform experiment
-    print job
+    print(job)
     outcome = -garbage(**job)
-    print outcome
+    print(outcome)
 
     # Inform scientist about the outcome
     scientist.update(job,outcome)

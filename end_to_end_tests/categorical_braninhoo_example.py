@@ -1,5 +1,7 @@
 # In this example we will optimize the 'Braninhoo' optimization benchmark with a small twist to 
 # demonstrate how to set up a categorical variable.  There is also a constraint on the function.
+from __future__ import print_function
+
 import whetlab
 import numpy as np
 
@@ -27,9 +29,9 @@ for i in range(10000):
     job = scientist.suggest()
 
     # Perform experiment
-    print job
+    print(job)
     outcome = -categorical_braninhoo(**job)
-    print outcome
+    print(outcome)
 
     # Inform scientist about the outcome
     scientist.update(job,outcome)

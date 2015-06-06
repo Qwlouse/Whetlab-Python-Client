@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 import ast
 import ConfigParser
@@ -495,7 +496,7 @@ class Experiment:
 
         pending = self.pending()
         if len(pending) > 0:
-            print "INFO: this experiment currently has "+str(len(pending))+" jobs (results) that are pending."
+            print("INFO: this experiment currently has "+str(len(pending))+" jobs (results) that are pending.")
 
     
     @catch_exception
@@ -841,7 +842,7 @@ class Experiment:
             # Delete from server
             self._client.delete_result(id)
         else:
-            print 'Did not find experiment with the provided parameters'
+            print('Did not find experiment with the provided parameters')
 
     
     @catch_exception
@@ -1025,7 +1026,7 @@ class Experiment:
         outcome_values = outcomes_values[s]
         outcome_values = np.array([float(i) for i in outcome_values])
         if outcome_values.size == 0 or np.all(np.isinf(outcome_values)):
-            print 'There are no completed results to report'
+            print('There are no completed results to report')
             return
 
         # Plot progression
@@ -1096,25 +1097,25 @@ def retry(f):
                 if i == len(RETRY_TIMES):
                     raise e
                 if i >=3 : # Only warn starting at the 2nd retry
-                    print 'WARNING: experiencing problems communicating with the server. Will try again in ',RETRY_TIMES[i],' seconds.'
+                    print('WARNING: experiencing problems communicating with the server. Will try again in ',RETRY_TIMES[i],' seconds.')
                 time.sleep(RETRY_TIMES[i])
             except ClientError as e: # An explicit error was returned by the server
                 if e.code == 503: # Temporary server maintenance
                     retry_time = np.round(np.random.rand()*2*30)
                     i -= 1
-                    print 'WARNING: Server is undergoing temporary maintenance. Will try again in %d seconds.' % (retry_time)
+                    print('WARNING: Server is undergoing temporary maintenance. Will try again in %d seconds.' % (retry_time))
                     time.sleep(retry_time)
                 elif e.code == 429:
                     if i == len(RETRY_TIMES):
                         i -= 1
                     msg = e.message[0] if type(e.message) == list else e.message
-                    print 'WARNING: rate limited by the server: %s Will try again in %d seconds.' % (msg, RETRY_TIMES[i])
+                    print('WARNING: rate limited by the server: %s Will try again in %d seconds.' % (msg, RETRY_TIMES[i]))
                     time.sleep(RETRY_TIMES[i])
                 elif e.code > 500:
                     if i == len(RETRY_TIMES):
                         raise e
                     if i >=3 : # Only warn starting at the 2nd retry
-                        print 'WARNING: experiencing problems communicating with the server. Will try again in ',RETRY_TIMES[i],' seconds.'
+                        print('WARNING: experiencing problems communicating with the server. Will try again in ',RETRY_TIMES[i],' seconds.')
                     time.sleep(RETRY_TIMES[i])
                 else:
                     raise
@@ -1172,7 +1173,7 @@ class SimpleREST:
         """
 
         res = self._client.experiment(str(id)).delete()
-        print 'Experiment has been deleted'
+        print('Experiment has been deleted')
 
     @retry
     def find_experiment(self, name):

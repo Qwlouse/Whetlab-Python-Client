@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import whetlab
 import numpy as np
 
@@ -24,9 +26,9 @@ def main():
         job = scientist.suggest()
 
         # Perform experiment
-        print job
+        print(job)
         outcome = boltzmann_goodness(**job)
-        print i, outcome
+        print(i, outcome)
 
 
         # Inform scientist about the outcome

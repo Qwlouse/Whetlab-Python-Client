@@ -1,5 +1,6 @@
 # NOTE:
 # Bug in click: if type="integer", click doesn't provide interpretable error
+from __future__ import print_function
 
 import os, sys, select, re
 import ConfigParser
@@ -51,8 +52,8 @@ def make_url(path):
 
 def _check_request(r):
     if str(r.status_code)[0] != '2':
-        print "HTTP %d" % r.status_code
-        print r.text
+        print("HTTP %d" % r.status_code)
+        print(r.text)
         sys.exit()
 
 def _write_config(access_token):
@@ -123,7 +124,7 @@ def _make_new_access_token():
     _check_request(r)
 
     out = r.json()
-    print r.text
+    print(r.text)
     if out.has_key("access_token"):
         access_token = r.json()['access_token']
     else:
@@ -1056,7 +1057,7 @@ def get_all_data(destination, output_format):
             name = experiment['name']
             click.echo(name)
             if len(settings):
-                print 'hi'
+                print('hi')
                 with open(os.path.join(destination, _normalize_filename(name+"-settings.tsv")), "wt") as f:
                     f.write(_format_output(settings, output_format))
             if len(results):
