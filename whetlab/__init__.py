@@ -898,11 +898,11 @@ class Experiment:
         self._sync_with_server()
 
         # Find ID of result with best outcome
-        ids = np.array(self._ids_to_outcome_values.keys())
+        ids = np.array(list(self._ids_to_outcome_values.keys()))
         outcomes = [self._ids_to_outcome_values[i] for i in ids]
 
         # Clean up nans, infs and Nones
-        outcomes = np.array(map(lambda x: float(x) if x is not None else -np.inf, outcomes))
+        outcomes = np.array([float(x) if x is not None else -np.inf for x in outcomes])
         outcomes[np.logical_not(np.isfinite(outcomes))] = -np.inf
         result_id = ids[outcomes.argmax()]
 
