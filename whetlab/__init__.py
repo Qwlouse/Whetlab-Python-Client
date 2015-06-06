@@ -8,7 +8,7 @@ except ImportError:
     import ConfigParser
 
 import numpy as np
-import server
+from whetlab import server
 import time
 import re
 import functools
