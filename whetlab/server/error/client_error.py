@@ -6,5 +6,5 @@ class ClientError(Exception):
 		self.message = message
 		self.code = code
 
-        def __str__(self):
-        	return 'Error code: ' + str(self.code) + ' Server message: ' + str(self.message)
+		def __str__(self):
+			return 'Error code: ' + str(self.code) + ' Server message: ' + str(self.message)

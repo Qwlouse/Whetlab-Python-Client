@@ -24,7 +24,7 @@ class Experiments():
 		body = options['body'] if 'body' in options else {}
 		body['name']        = name
 		body['description'] = description
-                body['settings']    = settings
+		body['settings']    = settings
 
 		response = self.client.post('/alpha/experiments/', body, options)
 
