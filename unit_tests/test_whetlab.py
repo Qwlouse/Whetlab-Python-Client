@@ -140,8 +140,8 @@ class TestExperiment:
                                        name=self.name,
                                        description=default_description)
         # Make sure result is still there
-        assert scientist._ids_to_param_values.values()[0] == {'p1':2.1,'p2':1}
-        assert scientist._ids_to_outcome_values.values()[0] == 3
+        assert list(scientist._ids_to_param_values.values())[0] == {'p1':2.1,'p2':1}
+        assert list(scientist._ids_to_outcome_values.values())[0] == 3
 
     @raises(ValueError)
     def test_empty_name(self):
@@ -585,16 +585,16 @@ class TestExperiment:
 
         # Make sure result was added
         scientist._sync_with_server()
-        assert scientist._ids_to_param_values.values()[0] == {'p1':5.1,'p2':5}
-        assert scientist._ids_to_outcome_values.values()[0] == 10
+        assert list(scientist._ids_to_param_values.values())[0] == {'p1':5.1,'p2':5}
+        assert list(scientist._ids_to_outcome_values.values())[0] == 10
 
         # Make sure result was overwritten
         scientist.update({'p1':5.1,'p2':5},20)
         scientist._sync_with_server()
         assert len(scientist._ids_to_param_values.values()) == 1
         assert len(scientist._ids_to_outcome_values.values()) == 1
-        assert scientist._ids_to_param_values.values()[0] == {'p1':5.1,'p2':5}
-        assert scientist._ids_to_outcome_values.values()[0] == 20
+        assert list(scientist._ids_to_param_values.values())[0] == {'p1':5.1,'p2':5}
+        assert list(scientist._ids_to_outcome_values.values())[0] == 20
 
     def test_update_as_failed(self):
         """ Update of failed results have -np.inf as outcome. """
@@ -609,7 +609,7 @@ class TestExperiment:
 
         # Make sure result was added
         scientist._sync_with_server()
-        assert float(scientist._ids_to_outcome_values.values()[0]) == -np.inf
+        assert float(list(scientist._ids_to_outcome_values.values())[0]) == -np.inf
 
     def test_suggest_twice(self):
         """ Calling suggest twice returns two different jobs. """
