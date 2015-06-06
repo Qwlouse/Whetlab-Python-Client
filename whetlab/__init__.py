@@ -160,7 +160,7 @@ def _validate_integer(name, properties):
             raise ValueError("Parameter '" +name+ "': property '" + property + "' must be defined")
 
     # Add default parameters if not present
-    for property, default in default_values['integer'].iteritems():
+    for property, default in default_values['integer'].items():
         if property not in properties:
             properties[property] = default
 
@@ -178,7 +178,7 @@ def _validate_integer(name, properties):
     if np.mod(properties['min'],1) != 0 : raise ValueError("Parameter '" + name + "': 'min' should be an integer")
     if np.mod(properties['max'],1) != 0 : raise ValueError("Parameter '" + name + "': 'max' should be an integer")
 
-    for property, legals in legal_values.iteritems():
+    for property, legals in legal_values.items():
         if properties[property] not in legals:
             raise ValueError("Parameter '" +name+ "': invalid value for property '" + property+"'")
 
@@ -200,7 +200,7 @@ def _validate_float(name, properties):
             raise ValueError("Parameter '" +name+ "': property '" + property + "' must be defined")
 
     # Add default parameters if not present
-    for property, default in default_values['float'].iteritems():
+    for property, default in default_values['float'].items():
         if property not in properties:
             properties[property] = default
 
@@ -215,7 +215,7 @@ def _validate_float(name, properties):
     if properties['min'] >= properties['max']:
         raise ValueError("Parameter '" + name + "': 'min' should be smaller than 'max'")
 
-    for property, legals in legal_values.iteritems():
+    for property, legals in legal_values.items():
         if properties[property] not in legals:
             raise ValueError("Parameter '" +name+ "': invalid value for property '" + property+"'")
 
@@ -238,7 +238,7 @@ def _validate_enum(name, properties):
             raise ValueError("Parameter '" +name+ "': property '" + property + "' must be defined")
 
     # Add default parameters if not present
-    for property, default in default_values['enum'].iteritems():
+    for property, default in default_values['enum'].items():
         if property not in properties:
             properties[property] = default
 
@@ -475,11 +475,11 @@ class Experiment:
                 if prop not in param : raise ValueError("Parameter '" +key+ "': property '" + prop + "' must be defined")
 
             # Add default parameters if not present
-            for prop, default in outcome_default_values.iteritems():
+            for prop, default in outcome_default_values.items():
                 if prop not in param: param[prop] = default
             
             # Check compatibility of properties
-            for prop, legals in outcome_legal_values.iteritems():
+            for prop, legals in outcome_legal_values.items():
                 if param[prop] not in legals : raise ValueError("Parameter '" +key+ "': invalid value for property '" + prop +"'")
 
             param['isOutput'] = True
@@ -648,7 +648,7 @@ class Experiment:
 
         id = None
 
-        for k,v in self._ids_to_param_values.iteritems():
+        for k,v in self._ids_to_param_values.items():
             if v == param_values:
                 id = k
 
@@ -670,7 +670,7 @@ class Experiment:
 
         jobs     = {}
         outcomes = {}
-        for k,v in self._ids_to_param_values.iteritems():
+        for k,v in self._ids_to_param_values.items():
             if v:
                 jobs[k] = Result(v)
                 jobs[k]._result_id = k
@@ -733,7 +733,7 @@ class Experiment:
         if outcome_val is not None:
             outcome_val = float(outcome_val)
         # Check if param_values is compatible
-        for param,value in param_values.iteritems():
+        for param,value in param_values.items():
             if param not in self.parameters:
                 raise ValueError("Parameter '" +param+ "' not valid")
 
@@ -788,7 +788,7 @@ class Experiment:
 
             # Create variables for new result
             variables = []
-            for name, setting_id in self._param_names_to_setting_ids.iteritems():
+            for name, setting_id in self._param_names_to_setting_ids.items():
                 if name in param_values:
                     value = param_values[name]
                 elif name == self.outcome_name:
@@ -867,7 +867,7 @@ class Experiment:
         
         # Find IDs of results with value None and append parameters to returned list
         ret = [] 
-        for key,val in self._ids_to_outcome_values.iteritems():
+        for key,val in self._ids_to_outcome_values.items():
             if val is None:
                 ret.append(Result(self._ids_to_param_values[key]))
                 ret[-1].result_id = key
@@ -1059,7 +1059,7 @@ class Experiment:
         for nb,id in enumerate(ids):
             # Get paramater values, put in correct order and add to
             # table with corresponding outcome value
-            params, values = zip(*self._ids_to_param_values[id].iteritems())
+            params, values = zip(*self._ids_to_param_values[id].items())
             s = np.argsort(params)
             values = np.array(values)[s]
             outcome = self._ids_to_outcome_values[id]
