@@ -753,7 +753,7 @@ class Experiment:
                     raise ValueError("Parameter '" +param+ "' should have value between "+str(self.parameters[param]['min']) +" and " + str(self.parameters[param]['max']))
             
             if self.parameters[param]['type'] == 'enum':
-                list_value = [value] if isinstance(value, basestring) else value
+                list_value = [value] if isinstance(value, string_types) else value
                 if not np.all([ v in self.parameters[param]['options'] for v in list_value]):
                     raise ValueError("Enum parameter '" +param+ "' should take values in " + str(self.parameters[param]['options']) + " not " + str(value))
             
@@ -764,7 +764,7 @@ class Experiment:
                 value_type = value_type.pop()
             else:
                 value_type = type(value)
-            if isinstance(value, basestring): #basestr includes unicode
+            if isinstance(value, string_types): #string_types includes unicode
                 value_type = str
             if value_type != python_types[self.parameters[param]['type']]:
                 raise TypeError("Parameter '" +param+ "' should be of type " + str(python_types[self.parameters[param]['type']]))
