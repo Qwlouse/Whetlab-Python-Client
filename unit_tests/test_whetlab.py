@@ -442,16 +442,16 @@ class TestExperiment:
                                        outcome=default_outcome)
 
         jobs = []
-        for i in xrange(5):
+        for i in range(5):
           jobs.append(scientist.suggest())
 
-        for i in xrange(5):
+        for i in range(5):
           scientist.update(jobs[i], np.random.randn())
 
         # Make sure result was removed
         scientist._sync_with_server()
 
-        for i in xrange(5):
+        for i in range(5):
           result_id = scientist.get_id(jobs[i])
           job = scientist.get_by_result_id(result_id)
           assert_equals(job, jobs[i])
@@ -466,10 +466,10 @@ class TestExperiment:
                                        outcome=default_outcome)
 
         jobs = []
-        for i in xrange(5):
+        for i in range(5):
           jobs.append(scientist.suggest())
 
-        for i in xrange(5):
+        for i in range(5):
           result_id = scientist.get_id(jobs[i])
           j = dict(jobs[i]) # Throw away the id
           assert_equals(result_id, scientist.get_id(j))
@@ -488,14 +488,14 @@ class TestExperiment:
                                        outcome=default_outcome)
 
         jobs = []
-        for i in xrange(5):
+        for i in range(5):
           jobs.append(scientist.suggest())
 
-        for i in xrange(5):
+        for i in range(5):
           result_id = scientist.get_id(jobs[i])
           scientist.update_by_result_id(result_id, npr.randn())
 
-        for i in xrange(5):
+        for i in range(5):
           result_id = scientist.get_id(jobs[i])
           scientist.cancel_by_result_id(result_id)
 
@@ -521,7 +521,7 @@ class TestExperiment:
           return hits
 
         jobs = []
-        for i in xrange(5):
+        for i in range(5):
           jobs.append(scientist.suggest())
           j, o = scientist.get_all_results()
           assert_equals(len(j), len(o))
@@ -529,7 +529,7 @@ class TestExperiment:
           assert_equals(o[scientist.get_id(jobs[i])], None)
           assert_equals(j[scientist.get_id(jobs[i])], jobs[i])
 
-        for i in xrange(5):
+        for i in range(5):
           result_id = scientist.get_id(jobs[i])
           outcome = npr.randn()
           scientist.update_by_result_id(result_id, outcome)
@@ -539,7 +539,7 @@ class TestExperiment:
           # assert_equals(count_in_list(jobs[i], j), 1)
           assert(outcome in o.values())
 
-        for i in xrange(5):
+        for i in range(5):
           result_id = scientist.get_id(jobs[i])
           scientist.cancel_by_result_id(result_id)
           j, o = scientist.get_all_results()
@@ -557,18 +557,18 @@ class TestExperiment:
                                        outcome=default_outcome)
 
         jobs = []
-        for i in xrange(5):
+        for i in range(5):
           jobs.append(scientist.suggest())
 
         outcomes = []
-        for i in xrange(5):          
+        for i in range(5):
           result_id = scientist.get_id(jobs[i])
           outcomes.append(npr.randn())
           scientist.update_by_result_id(result_id, outcomes[-1])
 
         # Make sure result was added
         scientist._sync_with_server()
-        for i in xrange(5):
+        for i in range(5):
           result_id = scientist.get_id(jobs[i])
           assert_equals(scientist._ids_to_outcome_values[result_id], outcomes[i])
 
@@ -737,8 +737,8 @@ class TestExperiment:
         # Make sure only result left is "b"
         scientist._sync_with_server()
         print(scientist._ids_to_param_values)
-        assert scientist._ids_to_param_values.values()[0] == b
-        assert scientist._ids_to_outcome_values.values()[0] == 10
+        assert list(scientist._ids_to_param_values.values())[0] == b
+        assert list(scientist._ids_to_outcome_values.values())[0] == 10
 
     @raises(ValueError)
     def test_update_parameter_too_small(self):

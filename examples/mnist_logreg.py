@@ -50,7 +50,7 @@ def train(inputs, targets, batch_size, learn_rate, momentum, l1_weight, l2_weigh
     best_epoch = -1
 
     # Loop over epochs.
-    for epoch in xrange(100):
+    for epoch in range(100):
 
         # Track the total loss.
         total_loss   = 0.0
