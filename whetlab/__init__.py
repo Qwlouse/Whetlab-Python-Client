@@ -14,6 +14,8 @@ import re
 import functools
 import requests
 import json
+from six import string_types
+
 from whetlab.server.error.client_error import *
 
 
@@ -383,12 +385,12 @@ class Experiment:
         self._param_names_to_setting_ids = {}
 
         config = load_config()
-        if config.has_key('api_url'):
+        if 'api_url' in config:
             url = config['api_url']
         else:
             url = DEFAULT_API_URL
         if access_token is None:
-            if config.has_key('access_token'):
+            if 'access_token' in config:
                 access_token = config['access_token']
             else:
                 raise Exception("No access token specified in dotfile or via constructor.")
@@ -397,10 +399,10 @@ class Experiment:
         self._client = SimpleREST(access_token, url)
 
         # Make a few obvious asserts
-        if name == '' or type(name) not in [str,unicode]:
+        if name == '' or not isinstance(name, string_types):
             raise ValueError('Name of experiment must be a non-empty string')
 
-        if type(description)  not in [str,unicode]:
+        if not isinstance(description, string_types):
             raise ValueError('Description of experiment must be a string')
 
         self.experiment = name
